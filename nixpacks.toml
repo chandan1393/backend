@@ -1,8 +1,0 @@
-[phases.setup]
-nixPkgs = ["jdk21"]
-
-[phases.build]
-cmds = ["mvn clean package -DskipTests -q"]
-
-[start]
-cmd = "java -Xmx400m -Xms128m -jar target/*.jar --spring.profiles.active=prod"
