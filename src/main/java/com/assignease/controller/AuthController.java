@@ -58,4 +58,19 @@ public class AuthController {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }
     }
+
+    @PostMapping("/register")
+    public ResponseEntity<?> register(@Valid @RequestBody com.assignease.dto.AppDTOs.StudentRegisterRequest request) {
+        try {
+            return ResponseEntity.ok(authService.registerStudent(request));
+        } catch (Exception e) {
+            String msg = e.getMessage() != null ? e.getMessage() : "Registration failed";
+            return ResponseEntity.badRequest().body(java.util.Map.of("message", msg));
+        }
+    }
+
+    @GetMapping("/health")
+    public ResponseEntity<?> health() {
+        return ResponseEntity.ok(java.util.Map.of("status","UP","service","EduAssist"));
+    }
 }

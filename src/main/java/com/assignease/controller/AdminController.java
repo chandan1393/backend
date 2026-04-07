@@ -5,6 +5,7 @@ import com.assignease.service.AssignmentService;
 import com.assignease.service.QueryService;
 import com.assignease.service.UserService;
 import com.assignease.service.WriterService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -30,11 +31,11 @@ public class AdminController {
     // ── Users
     @GetMapping("/users")   public ResponseEntity<?> getAllUsers()    { return ResponseEntity.ok(userService.getAllUsers()); }
     @GetMapping("/students")public ResponseEntity<?> getAllStudents() { return ResponseEntity.ok(userService.getAllStudents()); }
-    @PostMapping("/users")  public ResponseEntity<?> createUser(@RequestBody AppDTOs.UserCreateRequest req) {
+    @PostMapping("/users")  public ResponseEntity<?> createUser(@Valid @RequestBody AppDTOs.UserCreateRequest req) {
         try { return ResponseEntity.ok(userService.createUser(req)); }
         catch (Exception e) { return ResponseEntity.badRequest().body(Map.of("message", e.getMessage())); }
     }
-    @PutMapping("/users/{id}") public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody AppDTOs.UserCreateRequest req) {
+    @PutMapping("/users/{id}") public ResponseEntity<?> updateUser(@PathVariable Long id, @Valid @RequestBody AppDTOs.UserCreateRequest req) {
         return ResponseEntity.ok(userService.updateUser(id, req));
     }
     @PatchMapping("/users/{id}/toggle-status") public ResponseEntity<?> toggleUser(@PathVariable Long id) {
@@ -54,7 +55,7 @@ public class AdminController {
 
     /** Update status + price + adminReply */
     @PutMapping("/assignments/{id}/status") public ResponseEntity<?> updateStatus(
-            @PathVariable Long id, @RequestBody AppDTOs.UpdateAssignmentStatusRequest req) {
+            @PathVariable Long id, @Valid @RequestBody AppDTOs.UpdateAssignmentStatusRequest req) {
         try { return ResponseEntity.ok(assignmentService.updateStatus(id, req)); }
         catch (Exception e) { return ResponseEntity.badRequest().body(Map.of("message", e.getMessage())); }
     }

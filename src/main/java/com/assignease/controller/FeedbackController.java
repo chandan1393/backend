@@ -2,6 +2,7 @@ package com.assignease.controller;
 
 import com.assignease.entity.*;
 import com.assignease.repository.*;
+import com.assignease.config.InputSanitizer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -20,6 +21,7 @@ public class FeedbackController {
     private final UserEventRepository eventRepo;
     private final UserRepository userRepo;
     private final EnrollmentRepository enrollmentRepo;
+    private final InputSanitizer sanitizer;
 
     // ── FEEDBACK ─────────────────────────────────────────────────────────────
     @PostMapping("/api/feedback")
@@ -35,7 +37,7 @@ public class FeedbackController {
 
             StudentFeedback fb = StudentFeedback.builder()
                 .student(student).enrollment(enrollment).rating(rating)
-                .comment((String) body.getOrDefault("comment", ""))
+                .comment(sanitizer.sanitize((String) body.getOrDefault("comment", ""), 1000))
                 .anonymous(Boolean.TRUE.equals(body.get("anonymous"))).build();
             feedbackRepo.save(fb);
             return ResponseEntity.ok(Map.of("message","Thank you for your feedback!"));
@@ -66,8 +68,8 @@ public class FeedbackController {
 
             BugReport bug = BugReport.builder()
                 .reporter(reporter).reporterEmail(email)
-                .title((String) body.get("title"))
-                .description((String) body.get("description"))
+                .title(sanitizer.sanitize((String) body.get("title"), 200))
+                .description(sanitizer.sanitize((String) body.get("description"), 2000))
                 .category((String) body.getOrDefault("category","other"))
                 .severity(BugReport.BugSeverity.valueOf(
                     ((String) body.getOrDefault("severity","MEDIUM")).toUpperCase()))

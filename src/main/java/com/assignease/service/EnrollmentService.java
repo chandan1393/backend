@@ -10,6 +10,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import com.assignease.config.InputSanitizer;
+import com.assignease.service.FileStorageService;
 
 import java.io.*;
 import java.nio.file.*;
@@ -30,32 +32,33 @@ public class EnrollmentService {
     private final NotificationRepository notifRepo;
     private final EmailService emailService;
     private final WriterSubmissionRepository submissionRepo;
+    private final InputSanitizer sanitizer;
+    private final FileStorageService fileStorage;
     private final WriterInvitationRepository invitationRepo;
     private final WhatsAppService whatsAppService;
 
-    private static final String UPLOAD = "uploads/enrollments/";
 
     // ── Student: submit enrollment (class details + credentials) ─────────────
     public Map<String, Object> createEnrollment(Map<String, String> data, String studentEmail, MultipartFile doc) throws IOException {
         User student = userRepo.findByEmail(studentEmail).orElseThrow();
 
         Enrollment e = Enrollment.builder()
-            .courseName(data.get("courseName"))
-            .institutionName(data.get("institutionName"))
-            .subject(data.get("subject"))
-            .courseDescription(data.get("courseDescription"))
+            .courseName(sanitizer.sanitize(data.get("courseName"), 200))
+            .institutionName(sanitizer.sanitize(data.get("institutionName"), 200))
+            .subject(sanitizer.sanitize(data.get("subject"), 100))
+            .courseDescription(sanitizer.sanitize(data.get("courseDescription"), 2000))
             .classStartDate(data.containsKey("classStartDate") && !data.get("classStartDate").isEmpty() ? LocalDate.parse(data.get("classStartDate")) : null)
             .classEndDate(data.containsKey("classEndDate") && !data.get("classEndDate").isEmpty() ? LocalDate.parse(data.get("classEndDate")) : null)
-            .portalUrl(data.get("portalUrl"))
-            .portalUsername(data.get("portalUsername"))
+            .portalUrl(sanitizer.sanitize(data.get("portalUrl"), 500))
+            .portalUsername(sanitizer.sanitize(data.get("portalUsername"), 200))
             .portalPassword(data.get("portalPassword"))
-            .studentNotes(data.get("studentNotes"))
+            .studentNotes(sanitizer.sanitize(data.get("studentNotes"), 2000))
             .status(Enrollment.EnrollmentStatus.SUBMITTED)
             .student(student)
             .build();
 
         if (doc != null && !doc.isEmpty()) {
-            e.setReferenceDocPath(saveFile(doc, "docs/"));
+            e.setReferenceDocPath(fileStorage.save(doc, "enrollments/docs"));
         }
         e = enrollmentRepo.save(e);
 
@@ -74,7 +77,7 @@ public class EnrollmentService {
     // ── Student: upload payment receipt for an installment ───────────────────
     public Map<String, Object> uploadReceipt(Long installmentId, MultipartFile receipt, String studentEmail) throws IOException {
         PaymentInstallment inst = installmentRepo.findById(installmentId).orElseThrow();
-        String path = saveFile(receipt, "receipts/");
+        String path = fileStorage.save(receipt, "enrollments/receipts");
         inst.setReceiptPath(path);
         inst.setStatus(PaymentInstallment.InstallmentStatus.RECEIPT_UPLOADED);
         inst.setReceiptUploadedAt(LocalDateTime.now());
@@ -97,8 +100,8 @@ public class EnrollmentService {
     public Map<String, Object> updateEnrollment(Long id, Map<String, Object> data) {
         Enrollment e = enrollmentRepo.findById(id).orElseThrow();
         if (data.containsKey("status"))    e.setStatus(Enrollment.EnrollmentStatus.valueOf((String) data.get("status")));
-        if (data.containsKey("adminReply")) e.setAdminReply((String) data.get("adminReply"));
-        if (data.containsKey("adminNotes")) e.setAdminNotes((String) data.get("adminNotes"));
+        if (data.containsKey("adminReply")) e.setAdminReply(sanitizer.sanitize((String) data.get("adminReply"), 2000));
+        if (data.containsKey("adminNotes")) e.setAdminNotes(sanitizer.sanitize((String) data.get("adminNotes"), 2000));
         if (data.containsKey("totalPrice")) e.setTotalPrice(Double.valueOf(data.get("totalPrice").toString()));
         e = enrollmentRepo.save(e);
 
@@ -217,7 +220,7 @@ public class EnrollmentService {
         User writer = userRepo.findByEmail(writerEmail).orElseThrow();
 
         // Save file
-        String path = saveAsZip(file, "solutions/", e.getCourseName());
+        String path = fileStorage.saveAsZip(file, "enrollments/solutions", e.getCourseName());
         String fileName = file.getOriginalFilename();
 
         // Create submission history record (writer can upload multiple times)
@@ -401,27 +404,7 @@ public class EnrollmentService {
 
     // ── Private helpers ───────────────────────────────────────────────────────
 
-    private String saveFile(MultipartFile f, String sub) throws IOException {
-        Path dir = Paths.get(UPLOAD + sub);
-        if (!Files.exists(dir)) Files.createDirectories(dir);
-        String name = UUID.randomUUID() + "_" + f.getOriginalFilename();
-        Files.write(dir.resolve(name), f.getBytes());
-        return UPLOAD + sub + name;
-    }
 
-    private String saveAsZip(MultipartFile f, String sub, String title) throws IOException {
-        Path dir = Paths.get(UPLOAD + sub);
-        if (!Files.exists(dir)) Files.createDirectories(dir);
-        String safe = title.replaceAll("[^a-zA-Z0-9_\\-]", "_");
-        String zipName = UUID.randomUUID().toString().substring(0,8) + "_" + safe + "_Assignments.zip";
-        Path zipPath = dir.resolve(zipName);
-        try (FileOutputStream fos = new FileOutputStream(zipPath.toFile());
-             ZipOutputStream zos = new ZipOutputStream(fos)) {
-            zos.putNextEntry(new ZipEntry(f.getOriginalFilename() != null ? f.getOriginalFilename() : "assignments.pdf"));
-            zos.write(f.getBytes()); zos.closeEntry();
-        }
-        return UPLOAD + sub + zipName;
-    }
 
     private void notifyAdmins(String title, String msg, Long refId, User ignore) {
         userRepo.findAll().stream().filter(u -> u.getRole() == User.Role.ROLE_ADMIN)

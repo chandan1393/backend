@@ -3,6 +3,7 @@ package com.assignease.controller;
 import com.assignease.entity.*;
 import com.assignease.repository.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -10,6 +11,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import com.assignease.config.InputSanitizer;
+import com.assignease.service.FileStorageService;
 import java.io.IOException;
 import java.nio.file.*;
 import java.time.LocalDate;
@@ -21,13 +24,17 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class TrackerController {
 
+    @Value("${app.upload.dir}")
+    private String UPLOAD_BASE;
+
     private final AssignmentTrackerRepository trackerRepo;
     private final EnrollmentRepository enrollmentRepo;
     private final UserRepository userRepo;
     private final WriterInvitationRepository invitationRepo;
     private final NotificationRepository notifRepo;
+    private final InputSanitizer sanitizer;
+    private final FileStorageService fileStorage;
 
-    private static final String UPLOAD_BASE = "uploads/tracker/";
 
     // ── CREATE TASK (admin OR writer) ────────────────────────────────────────
     @PostMapping("/api/tracker/enrollments/{enrollmentId}/tasks")
@@ -41,9 +48,9 @@ public class TrackerController {
 
             AssignmentTracker task = AssignmentTracker.builder()
                 .enrollment(e).createdBy(creator)
-                .assignmentTitle((String) body.get("assignmentTitle"))
-                .description((String) body.getOrDefault("description", ""))
-                .assignmentType((String) body.getOrDefault("assignmentType", "assignment"))
+                .assignmentTitle(sanitizer.sanitize((String) body.get("assignmentTitle"), 200))
+                .description(sanitizer.sanitize((String) body.getOrDefault("description", ""), 1000))
+                .assignmentType(sanitizer.sanitize((String) body.getOrDefault("assignmentType", "assignment"), 50))
                 .dueDate(LocalDate.parse((String) body.get("dueDate")))
                 .uploadDeadline(body.get("uploadDeadline") != null && !((String)body.get("uploadDeadline")).isEmpty()
                     ? LocalDate.parse((String) body.get("uploadDeadline")) : null)
@@ -135,7 +142,7 @@ public class TrackerController {
             @AuthenticationPrincipal UserDetails ud) {
         try {
             AssignmentTracker task = trackerRepo.findById(taskId).orElseThrow();
-            String path = saveFile(file, taskId);
+            String path = fileStorage.save(file, "tracker/" + taskId);
             task.setWriterFilePath(path);
             task.setWriterFileName(file.getOriginalFilename());
             task.setWriterUploadedAt(LocalDateTime.now());
@@ -163,7 +170,7 @@ public class TrackerController {
             @AuthenticationPrincipal UserDetails ud) {
         try {
             AssignmentTracker task = trackerRepo.findById(taskId).orElseThrow();
-            String path = saveFile(file, taskId);
+            String path = fileStorage.save(file, "tracker/" + taskId);
             task.setTaskDocPath(path);
             task.setTaskDocName(file.getOriginalFilename());
             trackerRepo.save(task);
@@ -192,7 +199,7 @@ public class TrackerController {
             task.setAdminApproved(true);
             task.setAdminApprovedAt(LocalDateTime.now());
             task.setStatus(AssignmentTracker.TrackerStatus.APPROVED);
-            if (body != null) task.setAdminNote(body.getOrDefault("note", ""));
+            if (body != null) task.setAdminNote(sanitizer.sanitize(body.getOrDefault("note", ""), 500));
             trackerRepo.save(task);
 
             // Notify student
@@ -215,7 +222,7 @@ public class TrackerController {
             AssignmentTracker task = trackerRepo.findById(taskId).orElseThrow();
             task.setStatus(AssignmentTracker.TrackerStatus.REJECTED);
             task.setAdminApproved(false);
-            if (body != null) task.setAdminNote(body.getOrDefault("note", ""));
+            if (body != null) task.setAdminNote(sanitizer.sanitize(body.getOrDefault("note", ""), 500));
             trackerRepo.save(task);
 
             if (task.getEnrollment().getAssignedWriter() != null) {
@@ -231,6 +238,7 @@ public class TrackerController {
     }
 
     // ── DOWNLOAD FILE (writer file or task doc) ───────────────────────────────
+    @Deprecated // Use /api/files/tracker/{taskId}/writer-file instead
     @GetMapping("/api/tracker/tasks/{taskId}/download-writer-file")
     public ResponseEntity<byte[]> downloadWriterFile(
             @PathVariable Long taskId,
@@ -272,7 +280,7 @@ public class TrackerController {
             Optional<WriterInvitation> existing = invitationRepo.findByEnrollmentIdAndWriterId(enrollmentId, writerId);
             if (existing.isPresent() && existing.get().getStatus() == WriterInvitation.InvitationStatus.PENDING)
                 return ResponseEntity.badRequest().body(Map.of("message", "Writer already invited."));
-            String msg = body != null ? body.getOrDefault("message", "") : "";
+            String msg = sanitizer.sanitize(body != null ? body.getOrDefault("message", "") : "", 500);
             WriterInvitation inv = WriterInvitation.builder().enrollment(e).writer(writer).message(msg).build();
             invitationRepo.save(inv);
             save(writer, "Class Invitation 📨",

@@ -11,9 +11,11 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import com.assignease.config.InputSanitizer;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -84,5 +86,22 @@ public class AuthService {
         user.setResetTokenExpiry(null);
         user.setFirstLogin(false);
         userRepository.save(user);
+    }
+
+    public Map<String, Object> registerStudent(com.assignease.dto.AppDTOs.StudentRegisterRequest req) {
+        String email = req.getEmail().trim().toLowerCase();
+        if (userRepository.findByEmail(email).isPresent())
+            throw new RuntimeException("An account with this email already exists.");
+        com.assignease.entity.User user = com.assignease.entity.User.builder()
+            .fullName(req.getFullName().trim())
+            .email(email)
+            .password(passwordEncoder.encode(req.getPassword()))
+            .phone(req.getPhone() != null ? req.getPhone().trim() : null)
+            .role(com.assignease.entity.User.Role.ROLE_STUDENT)
+            .firstLogin(true)
+            .enabled(true)
+            .build();
+        userRepository.save(user);
+        return Map.of("message", "Account created successfully. Please log in.");
     }
 }

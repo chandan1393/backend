@@ -1,21 +1,57 @@
 package com.assignease.dto;
 
-import com.assignease.entity.Assignment;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.*;
 import lombok.Data;
-
 import java.time.LocalDateTime;
 
 public class AppDTOs {
 
+    // ── Student Self-Registration ────────────────────────────────────────────
+    @Data
+    public static class StudentRegisterRequest {
+        @NotBlank(message = "Full name is required")
+        @Size(min = 2, max = 80, message = "Name must be 2–80 characters")
+        @Pattern(regexp = "^[a-zA-Z\\s'\\-\\.]+$", message = "Name contains invalid characters")
+        private String fullName;
+
+        @NotBlank(message = "Email is required")
+        @Email(message = "Please enter a valid email address")
+        @Size(max = 150, message = "Email too long")
+        private String email;
+
+        @NotBlank(message = "Password is required")
+        @Size(min = 8, max = 100, message = "Password must be 8–100 characters")
+        @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).{8,}$",
+                 message = "Password must contain uppercase, lowercase, and a number")
+        private String password;
+
+        @Pattern(regexp = "^[\\+\\d\\s\\-\\.\\(\\)]{0,25}$", message = "Invalid phone number format")
+        private String phone;
+    }
+
+    // ── Contact / Query Form ─────────────────────────────────────────────────
     @Data
     public static class QueryRequest {
-        @NotBlank private String name;
-        @Email @NotBlank private String email;
+        @NotBlank(message = "Name is required")
+        @Size(min = 2, max = 80, message = "Name must be 2–80 characters")
+        @Pattern(regexp = "^[a-zA-Z\\s'\\-\\.]+$", message = "Name contains invalid characters")
+        private String name;
+
+        @NotBlank(message = "Email is required")
+        @Email(message = "Please enter a valid email address")
+        @Size(max = 150)
+        private String email;
+
+        @Pattern(regexp = "^[\\+\\d\\s\\-\\.\\(\\)]{0,25}$", message = "Invalid phone format")
         private String phone;
-        @NotBlank private String subject;
-        @NotBlank private String message;
+
+        @NotBlank(message = "Subject is required")
+        @Size(max = 100, message = "Subject too long")
+        private String subject;
+
+        @NotBlank(message = "Message is required")
+        @Size(min = 10, max = 2000, message = "Message must be 10–2000 characters")
+        private String message;
     }
 
     @Data
@@ -30,68 +66,66 @@ public class AppDTOs {
         private LocalDateTime createdAt;
     }
 
+    // ── Enrollment ────────────────────────────────────────────────────────────
     @Data
-    public static class AssignmentRequest {
-        @NotBlank private String title;
-        @NotBlank private String description;
-        @NotBlank private String subject;
-        private String level;
-        private Integer pages;
-        private String wordCount;
-        private LocalDateTime deadline;
-        private String studentNotes;
-        // document upload is handled separately via multipart
-    }
+    public static class EnrollmentRequest {
+        @NotBlank(message = "Course name is required")
+        @Size(max = 150, message = "Course name too long")
+        private String courseName;
 
-    @Data
-    public static class AssignmentResponse {
-        private Long id;
-        private String title;
-        private String description;
+        @NotBlank(message = "Institution name is required")
+        @Size(max = 150, message = "Institution name too long")
+        private String institutionName;
+
+        @NotBlank(message = "Subject is required")
+        @Size(max = 100)
         private String subject;
-        private String level;
-        private Integer pages;
-        private String wordCount;
-        private LocalDateTime deadline;
-        private String status;
-        private Double price;
-        // Student sees filePath only after admin approves writer's upload
-        private String filePath;
-        // Writer's uploaded file — only admin sees this
-        private String writerFilePath;
-        private Boolean writerFileApproved;
-        // Student uploaded document
-        private String studentDocumentPath;
-        // Admin reply to student (visible in student dashboard)
-        private String adminReply;
-        private Boolean paymentDone;
-        private String studentName;
-        private String studentEmail;
-        // Writer sees: no student name/email, only assignment details
-        private String assignedWriterName;
-        private String adminNotes;
-        private String studentNotes;
-        private LocalDateTime createdAt;
-        private LocalDateTime updatedAt;
-        private LocalDateTime completedAt;
+
+        @Size(max = 200)
+        private String portalUrl;
+
+        @Size(max = 150)
+        private String portalUsername;
+
+        @Size(max = 150)
+        private String portalPassword;
+
+        @NotNull(message = "Class start date is required")
+        private String classStartDate; // YYYY-MM-DD
+
+        @NotNull(message = "Class end date is required")
+        private String classEndDate;   // YYYY-MM-DD
+
+        @Size(max = 500)
+        private String additionalNotes;
     }
 
-    @Data
-    public static class UpdateAssignmentStatusRequest {
-        private String status;
-        private String adminNotes;
-        private String adminReply;
-        private Double price;
-    }
-
+    // ── Admin: Create / Update User ──────────────────────────────────────────
     @Data
     public static class UserCreateRequest {
-        @NotBlank private String fullName;
-        @Email @NotBlank private String email;
+        @NotBlank(message = "Full name is required")
+        @Size(min = 2, max = 80, message = "Name must be 2–80 characters")
+        @Pattern(regexp = "^[a-zA-Z\\s'\\-\\.]+$", message = "Name contains invalid characters")
+        private String fullName;
+
+        @NotBlank(message = "Email is required")
+        @Email(message = "Please enter a valid email address")
+        @Size(max = 150, message = "Email too long")
+        private String email;
+
+        @Pattern(regexp = "^[\\+\\d\\s\\-\\.\\(\\)]{0,25}$", message = "Invalid phone number format")
         private String phone;
+
+        @NotBlank(message = "Role is required")
+        @Pattern(regexp = "^(ROLE_STUDENT|ROLE_WRITER|ROLE_ADMIN)$", message = "Role must be ROLE_STUDENT, ROLE_WRITER, or ROLE_ADMIN")
         private String role;
+
+        // Optional — if blank, a temporary password is auto-generated and emailed
+        @Size(min = 8, max = 100, message = "Password must be 8–100 characters")
+        private String password;
     }
 
+    // ── User Response ─────────────────────────────────────────────────────────
     @Data
     public static class UserResponse {
         private Long id;
@@ -101,26 +135,117 @@ public class AppDTOs {
         private String role;
         private boolean enabled;
         private boolean firstLogin;
-        private LocalDateTime createdAt;
+        private java.time.LocalDateTime createdAt;
         private long assignmentCount;
     }
 
+    // ── Assignment Response (returned by AssignmentService) ──────────────────
     @Data
-    public static class DashboardStats {
+    public static class AssignmentResponse {
+        private Long   id;
+        private String title;
+        private String description;
+        private String subject;
+        private String level;
+        private Integer pages;
+        private String wordCount;
+        private java.time.LocalDateTime deadline;
+        private String status;
+        private Double price;
+
+        // Student-uploaded reference document
+        // NEVER expose raw disk path — always serve via /api/files/
+        private String studentDocumentPath;
+
+        // Approved file path visible to student after approval
+        // Served via GET /api/files/submission/{id}
+        private String filePath;
+
+        // Writer's uploaded file — admin only
+        private String writerFilePath;
+        private Boolean writerFileApproved;
+
+        private String adminNotes;
+        private String adminReply;
+        private String studentNotes;
+        private boolean paymentDone;
+
+        // Student info — only included in admin view (isAdmin=true)
+        private String studentName;
+        private String studentEmail;
+
+        // Writer info
+        private String assignedWriterName;
+
+        private java.time.LocalDateTime createdAt;
+        private java.time.LocalDateTime updatedAt;
+        private java.time.LocalDateTime completedAt;
+    }
+
+    // ── Admin: Update Assignment Status ──────────────────────────────────────
+    @Data
+    public static class UpdateAssignmentStatusRequest {
+        @Pattern(
+            regexp = "^(SUBMITTED|UNDER_REVIEW|IN_PROGRESS|DELIVERED|CANCELLED|REVISION_REQUESTED|PENDING_PAYMENT|PAYMENT_CONFIRMED)?$",
+            message = "Invalid status value"
+        )
+        private String status;
+
+        @Size(max = 2000, message = "Admin notes must be under 2000 characters")
+        private String adminNotes;
+
+        @Size(max = 2000, message = "Admin reply must be under 2000 characters")
+        private String adminReply;
+
+        @DecimalMin(value = "0.0", inclusive = false, message = "Price must be greater than 0")
+        @DecimalMax(value = "99999.99", message = "Price too large")
+        private Double price;
+    }
+
+    @Data
+    public static class AssignmentRequest {
+
+        private String title;
+        private String description;
+        private String subject;
+        private String level;
+
+        private Integer pages;
+        private String wordCount;
+
+        private LocalDateTime deadline;
+
+        private String studentNotes;
+    }
+
+    @Data
+    public static  class DashboardStats {
+
         private long totalAssignments;
         private long pendingAssignments;
         private long completedAssignments;
         private long inProgressAssignments;
         private long totalStudents;
-        private long totalQueries;
-        private long pendingQueries;
     }
 
     @Data
     public static class ContactMessage {
-        @NotBlank private String name;
-        @Email @NotBlank private String email;
+
+        @NotBlank(message = "Name is required")
+        @Size(min = 2, max = 80, message = "Name must be 2–80 characters")
+        @Pattern(regexp = "^[a-zA-Z\\s'\\-\\.]+$", message = "Name contains invalid characters")
+        private String name;
+
+        @NotBlank(message = "Email is required")
+        @Email(message = "Please enter a valid email address")
+        @Size(max = 150)
+        private String email;
+
+        @Pattern(regexp = "^[\\+\\d\\s\\-\\.\\(\\)]{0,25}$", message = "Invalid phone format")
         private String phone;
-        @NotBlank private String message;
+
+        @NotBlank(message = "Message is required")
+        @Size(min = 10, max = 2000, message = "Message must be 10–2000 characters")
+        private String message;
     }
 }

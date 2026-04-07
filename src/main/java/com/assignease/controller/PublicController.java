@@ -5,6 +5,7 @@ import com.assignease.entity.TextMeLead;
 import com.assignease.service.QueryService;
 import com.assignease.service.SiteService;
 import com.assignease.service.WhatsAppService;
+import com.assignease.config.InputSanitizer;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +20,7 @@ public class PublicController {
     private final QueryService queryService;
     private final SiteService siteService;
     private final WhatsAppService whatsAppService;
+    private final InputSanitizer sanitizer;
 
     @PostMapping("/query")
     public ResponseEntity<?> submitQuery(@Valid @RequestBody AppDTOs.QueryRequest request) {
@@ -45,10 +47,13 @@ public class PublicController {
 
     @PostMapping("/text-me")
     public ResponseEntity<?> textMe(@RequestBody Map<String, String> body) {
-        String phone = body.get("phone");
-        String countryCode = body.getOrDefault("countryCode", "");
+        String phone = sanitizer.sanitizePhone(body.get("phone"));
+        String countryCode = sanitizer.sanitize(body.getOrDefault("countryCode", ""), 10);
         if (phone == null || phone.trim().isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("message", "Phone number is required"));
+        }
+        if (sanitizer.containsSuspiciousContent(phone)) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Invalid input detected."));
         }
         try {
             TextMeLead lead = siteService.saveTextMeLead(phone.trim(), countryCode);

@@ -11,6 +11,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import com.assignease.config.InputSanitizer;
+import com.assignease.service.FileStorageService;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -32,6 +34,8 @@ import java.util.stream.Collectors;
 public class AssignmentService {
 
     private final AssignmentRepository assignmentRepository;
+    private final FileStorageService fileStorage;
+    private final InputSanitizer sanitizer;
     private final UserRepository userRepository;
     private final NotificationRepository notificationRepository;
     private final EmailService emailService;
@@ -62,7 +66,7 @@ public class AssignmentService {
 
         // Save student uploaded document if provided
         if (document != null && !document.isEmpty()) {
-            String docPath = saveFile(document, "student-docs/");
+            String docPath = fileStorage.save(document, "assignments/student-docs");
             assignment.setStudentDocumentPath(docPath);
         }
 
@@ -104,8 +108,8 @@ public class AssignmentService {
 
         if (request.getStatus() != null)
             assignment.setStatus(Assignment.AssignmentStatus.valueOf(request.getStatus()));
-        if (request.getAdminNotes() != null) assignment.setAdminNotes(request.getAdminNotes());
-        if (request.getAdminReply() != null) assignment.setAdminReply(request.getAdminReply());
+        if (request.getAdminNotes() != null) assignment.setAdminNotes(sanitizer.sanitize(request.getAdminNotes(), 2000));
+        if (request.getAdminReply() != null) assignment.setAdminReply(sanitizer.sanitize(request.getAdminReply(), 2000));
         if (request.getPrice() != null) assignment.setPrice(request.getPrice());
 
         if (assignment.getStatus() == Assignment.AssignmentStatus.UNDER_REVIEW ||
@@ -146,7 +150,7 @@ public class AssignmentService {
             throw new RuntimeException("You are not assigned to this assignment");
         }
 
-        String path = saveAsZip(file, "writer-solutions/", assignment.getTitle());
+        String path = fileStorage.saveAsZip(file, "assignments/writer-solutions", assignment.getTitle());
         assignment.setWriterFilePath(path);
         assignment.setWriterFileApproved(false); // Admin must approve first
         assignment.setStatus(Assignment.AssignmentStatus.UNDER_REVIEW);
@@ -193,7 +197,7 @@ public class AssignmentService {
         Assignment assignment = assignmentRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Assignment not found"));
 
-        String path = saveAsZip(file, "admin-solutions/", assignment.getTitle());
+        String path = fileStorage.saveAsZip(file, "assignments/admin-solutions", assignment.getTitle());
         assignment.setFilePath(path);
         assignment.setWriterFileApproved(true);
         assignment.setStatus(Assignment.AssignmentStatus.DELIVERED);
