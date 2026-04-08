@@ -16,17 +16,17 @@ import java.util.Base64;
 @Slf4j
 public class WhatsAppService {
 
-    @Value("${twilio.account.sid:}")
-    private String accountSid;
+    //}")
+    private String accountSid="dfsdfsdfsdfsdfdf";
 
-    @Value("${twilio.auth.token:}")
-    private String authToken;
+    //@Value("${twilio.auth.token:}")
+    private String authToken="dfdfsdfdsfsdfsdfs";
 
-    @Value("${twilio.whatsapp.from:whatsapp:+14155238886}")
-    private String fromNumber;
+   // @Value("${twilio.whatsapp.from:whatsapp:+14155238886}")
+    private String fromNumber="+14155238886";
 
-    @Value("${app.company.name:AssignEase}")
-    private String companyName;
+   // @Value("${app.company.name:AssignEase}")
+    private String companyName="AssignEase";
 
     /**
      * Sends a WhatsApp message via Twilio API.
