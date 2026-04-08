@@ -53,7 +53,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/events/track").permitAll()
                 .requestMatchers("/api/tracker/**").authenticated()
                 .requestMatchers("/api/invitations/**").authenticated()
-                .requestMatchers("/api/enrollments/{id}/credentials").authenticated()
+                .requestMatchers("/api/enrollments/**/credentials").authenticated()
                 // Admin endpoints
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/writer/**").hasAnyRole("WRITER", "ADMIN")

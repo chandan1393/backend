@@ -202,35 +202,9 @@ public class AppDTOs {
         private Double price;
     }
 
-    @Data
-    public static class AssignmentRequest {
-
-        private String title;
-        private String description;
-        private String subject;
-        private String level;
-
-        private Integer pages;
-        private String wordCount;
-
-        private LocalDateTime deadline;
-
-        private String studentNotes;
-    }
-
-    @Data
-    public static  class DashboardStats {
-
-        private long totalAssignments;
-        private long pendingAssignments;
-        private long completedAssignments;
-        private long inProgressAssignments;
-        private long totalStudents;
-    }
-
+    // ── Contact Form (landing page "Contact Us") ──────────────────────────────
     @Data
     public static class ContactMessage {
-
         @NotBlank(message = "Name is required")
         @Size(min = 2, max = 80, message = "Name must be 2–80 characters")
         @Pattern(regexp = "^[a-zA-Z\\s'\\-\\.]+$", message = "Name contains invalid characters")
@@ -247,5 +221,46 @@ public class AppDTOs {
         @NotBlank(message = "Message is required")
         @Size(min = 10, max = 2000, message = "Message must be 10–2000 characters")
         private String message;
+    }
+
+    // ── Admin Dashboard Stats ─────────────────────────────────────────────────
+    @Data
+    public static class DashboardStats {
+        private long totalAssignments;
+        private long pendingAssignments;
+        private long completedAssignments;
+        private long inProgressAssignments;
+        private long totalStudents;
+        private long totalQueries;
+        private long pendingQueries;
+    }
+
+    // ── Student: Create Assignment Request ────────────────────────────────────
+    @Data
+    public static class AssignmentRequest {
+        @NotBlank(message = "Title is required")
+        @Size(max = 200, message = "Title too long")
+        private String title;
+
+        @NotBlank(message = "Description is required")
+        @Size(min = 10, max = 2000, message = "Description must be 10–2000 characters")
+        private String description;
+
+        @NotBlank(message = "Subject is required")
+        @Size(max = 100)
+        private String subject;
+
+        @Size(max = 50)
+        private String level;     // e.g. "Undergraduate", "Graduate"
+
+        private Integer pages;
+
+        @Size(max = 20)
+        private String wordCount;
+
+        private java.time.LocalDateTime deadline;
+
+        @Size(max = 1000)
+        private String studentNotes;
     }
 }
