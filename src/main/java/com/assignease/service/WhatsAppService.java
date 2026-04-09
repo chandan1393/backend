@@ -16,6 +16,9 @@ import java.util.Base64;
 @Slf4j
 public class WhatsAppService {
 
+    @Value("${app.frontend.url}")
+    private String frontendUrl;
+
     @Value("${twilio.account.sid:}")
     private String accountSid;
 
@@ -77,7 +80,7 @@ public class WhatsAppService {
         return "Hi! 👋 Thank you for your interest in *" + companyName + "*.\n\n"
                 + "We received your request from " + phone + ".\n"
                 + "Our team will contact you shortly to discuss your assignment requirements.\n\n"
-                + "You can also submit a detailed query at: http://localhost:4200\n\n"
+                + "You can also submit a detailed query at:"+ frontendUrl+"\n\n"
                 + "Best regards,\n" + companyName + " Team 🎓";
     }
 }

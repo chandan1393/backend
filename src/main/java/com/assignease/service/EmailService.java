@@ -5,16 +5,22 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import jakarta.mail.internet.MimeMessage;
+import org.springframework.beans.factory.annotation.Value;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class EmailService {
 
+    @Value("${app.frontend.url}")
+    private String frontendUrl;
+
     private final JavaMailSender mailSender;
 
+    @Async
     public void sendWelcomeEmail(String toEmail, String name, String tempPassword) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
@@ -27,7 +33,7 @@ public class EmailService {
                 "Email: " + toEmail + "\n" +
                 "Temporary Password: " + tempPassword + "\n\n" +
                 "Please login and change your password immediately.\n" +
-                "Login at: http://localhost:4200/login\n\n" +
+                        "Login at: " + frontendUrl + "/login\n\n" +
                 "Best regards,\nAssignEase Team"
             );
             mailSender.send(message);
@@ -37,6 +43,7 @@ public class EmailService {
         }
     }
 
+    @Async
     public void sendQueryConfirmation(String toEmail, String name, Long queryId) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
@@ -55,6 +62,7 @@ public class EmailService {
         }
     }
 
+    @Async
     public void sendAssignmentStatusUpdate(String toEmail, String name, String assignmentTitle, String status) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
@@ -64,8 +72,8 @@ public class EmailService {
                 "Dear " + name + ",\n\n" +
                 "Your assignment '" + assignmentTitle + "' has been updated.\n" +
                 "Current Status: " + status + "\n\n" +
-                "Login to your dashboard to view details.\n" +
-                "http://localhost:4200/dashboard\n\n" +
+                "Login to your dashboard to view details.\n"
+                + frontendUrl + "/dashboard\n\n" +
                 "Best regards,\nAssignEase Team"
             );
             mailSender.send(message);
@@ -74,17 +82,18 @@ public class EmailService {
         }
     }
 
+    @Async
     public void sendPasswordResetEmail(String toEmail, String resetToken) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setTo(toEmail);
             message.setSubject("Password Reset – AssignEase");
             message.setText(
-                "Dear User,\n\n" +
-                "You requested a password reset. Use the link below:\n\n" +
-                "http://localhost:4200/reset-password?token=" + resetToken + "\n\n" +
-                "This link expires in 1 hour. If you didn't request this, ignore this email.\n\n" +
-                "Best regards,\nAssignEase Team"
+                    "Dear User,\n\n" +
+                            "You requested a password reset. Use the link below:\n\n" +
+                            frontendUrl + "/reset-password?token=" + resetToken + "\n\n" +
+                            "This link expires in 1 hour. If you didn't request this, ignore this email.\n\n" +
+                            "Best regards,\nAssignEase Team"
             );
             mailSender.send(message);
         } catch (Exception e) {
@@ -92,7 +101,7 @@ public class EmailService {
         }
     }
 
-
+    @Async
     public void sendInstallmentReminder(String toEmail, String name, String courseName,
             int installmentNum, String amount, String dueDate, String stripeLink) {
         try {
