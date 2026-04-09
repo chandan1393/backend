@@ -58,6 +58,9 @@ public class EmailService {
         }
     }
 
+    @Async public void sendWelcomeEmail(String toEmail, String name, String tempPassword) { try { SimpleMailMessage message = new SimpleMailMessage(); message.setTo(toEmail); message.setSubject("Welcome to AssignEase – Your Account is Ready!"); message.setText( "Dear " + name + ",\n\n" + "Welcome to AssignEase! Your account has been created.\n\n" + "Login Details:\n" + "Email: " + toEmail + "\n" + "Temporary Password: " + tempPassword + "\n\n" + "Please login and change your password immediately.\n" + "Login at: " + frontendUrl + "/login\n\n" + "Best regards,\nAssignEase Team" ); mailSender.send(message); log.info("Welcome email sent to: {}", toEmail); } catch (Exception e) { log.error("Failed to send welcome email to {}: {}", toEmail, e.getMessage()); } }
+
+
     @Async
     public void sendAssignmentStatusUpdate(String toEmail, String name, String assignmentTitle, String status) {
         try {
