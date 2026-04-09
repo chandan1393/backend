@@ -104,6 +104,13 @@
             <version>24.3.0</version>
         </dependency>
 
+        <!-- SpringDoc OpenAPI 3 — Swagger UI with JWT auth (Boot 3 compatible) -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>2.3.0</version>
+        </dependency>
+
         <!-- Jackson Java 8 date/time support (LocalDateTime → ISO-8601 UTC) -->
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>

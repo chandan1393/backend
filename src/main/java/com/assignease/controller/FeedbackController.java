@@ -2,6 +2,7 @@ package com.assignease.controller;
 
 import com.assignease.entity.*;
 import com.assignease.repository.*;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import com.assignease.config.InputSanitizer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -12,6 +13,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Tag(name = "Feedback, Bugs & Analytics", description = "Student feedback, bug reports, event tracking")
 @RestController
 @RequiredArgsConstructor
 public class FeedbackController {

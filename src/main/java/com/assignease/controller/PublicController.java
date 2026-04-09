@@ -5,6 +5,8 @@ import com.assignease.entity.TextMeLead;
 import com.assignease.service.QueryService;
 import com.assignease.service.SiteService;
 import com.assignease.service.WhatsAppService;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import com.assignease.config.InputSanitizer;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +14,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
+@Tag(name = "Public", description = "No authentication required — landing page forms, config, testimonials")
+@SecurityRequirements
 @RestController
 @RequestMapping("/api/public")
 @RequiredArgsConstructor

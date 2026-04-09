@@ -2,6 +2,7 @@ package com.assignease.controller;
 
 import com.assignease.entity.*;
 import com.assignease.repository.*;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
@@ -20,6 +21,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Tag(name = "Tracker & Invitations", description = "Assignment tracker tasks, writer invitations, credential approval")
 @RestController
 @RequiredArgsConstructor
 public class TrackerController {

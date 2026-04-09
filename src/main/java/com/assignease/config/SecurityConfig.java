@@ -45,6 +45,12 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 // Public endpoints
+                .requestMatchers(
+                    // Swagger UI — allow unauthenticated access
+                    "/swagger-ui.html", "/swagger-ui/**",
+                    "/v3/api-docs/**", "/api-docs/**",
+                    "/swagger-resources/**", "/webjars/**"
+                ).permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/auth/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/public/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/public/**").permitAll()
@@ -53,7 +59,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/events/track").permitAll()
                 .requestMatchers("/api/tracker/**").authenticated()
                 .requestMatchers("/api/invitations/**").authenticated()
-                .requestMatchers("/api/enrollments/**/credentials").authenticated()
+                .requestMatchers("/api/enrollments/{id}/credentials").authenticated()
                 // Admin endpoints
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/writer/**").hasAnyRole("WRITER", "ADMIN")

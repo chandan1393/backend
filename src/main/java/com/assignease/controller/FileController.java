@@ -3,6 +3,8 @@ package com.assignease.controller;
 import com.assignease.entity.*;
 import com.assignease.repository.*;
 import com.assignease.service.FileStorageService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
@@ -25,6 +27,7 @@ import java.nio.charset.StandardCharsets;
  *   4. Served with correct Content-Type and Content-Disposition headers
  */
 @Slf4j
+@Tag(name = "File Downloads", description = "Authenticated file download endpoints. Student only gets approved files.")
 @RestController
 @RequestMapping("/api/files")
 @RequiredArgsConstructor

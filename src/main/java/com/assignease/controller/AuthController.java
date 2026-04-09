@@ -2,6 +2,10 @@ package com.assignease.controller;
 
 import com.assignease.dto.AuthDTOs;
 import com.assignease.service.AuthService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -11,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+@Tag(name = "Authentication", description = "Login, register, password reset")
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -18,6 +23,10 @@ public class AuthController {
 
     private final AuthService authService;
 
+    @Operation(summary = "Login", description = "Returns a JWT token. Copy the \"token\" field and use it in Authorize → BearerAuth.")
+    @ApiResponse(responseCode = "200", description = "Login successful — token returned")
+    @ApiResponse(responseCode = "400", description = "Invalid credentials")
+    @SecurityRequirements  // no auth needed for login
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody AuthDTOs.LoginRequest request) {
         try {
@@ -27,6 +36,7 @@ public class AuthController {
         }
     }
 
+    @Operation(summary = "Change Password", description = "Requires current password. Used on first login.")
     @PostMapping("/change-password")
     public ResponseEntity<?> changePassword(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -39,6 +49,8 @@ public class AuthController {
         }
     }
 
+    @Operation(summary = "Forgot Password", description = "Sends password reset link to email")
+    @SecurityRequirements
     @PostMapping("/forgot-password")
     public ResponseEntity<?> forgotPassword(@RequestBody AuthDTOs.ForgotPasswordRequest request) {
         try {
@@ -59,6 +71,8 @@ public class AuthController {
         }
     }
 
+    @Operation(summary = "Student Self-Registration", description = "Creates a student account. No auth required.")
+    @SecurityRequirements
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody com.assignease.dto.AppDTOs.StudentRegisterRequest request) {
         try {

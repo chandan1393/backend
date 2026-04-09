@@ -1,6 +1,8 @@
 package com.assignease.controller;
 
 import com.assignease.service.EnrollmentService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -12,6 +14,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 import java.util.Map;
 
+@Tag(name = "Enrollments", description = "Student enrollment management, installments, submissions")
 @RestController
 @RequiredArgsConstructor
 public class EnrollmentController {

@@ -6,6 +6,8 @@ import com.assignease.service.QueryService;
 import com.assignease.service.UserService;
 import com.assignease.service.WriterService;
 import jakarta.validation.Valid;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -15,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Map;
 
+@Tag(name = "Admin", description = "Admin-only endpoints. Requires ROLE_ADMIN.")
 @RestController
 @RequestMapping("/api/admin")
 @RequiredArgsConstructor
