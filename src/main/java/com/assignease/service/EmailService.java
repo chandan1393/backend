@@ -21,44 +21,40 @@ public class EmailService {
     private final JavaMailSender mailSender;
 
     @Async
-    public void sendWelcomeEmail(String toEmail, String name, String tempPassword) {
+    public void sendWelcomeAndQueryEmail(String toEmail, String name, String tempPassword, Long queryId) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setTo(toEmail);
-            message.setSubject("Welcome to AssignEase – Your Account is Ready!");
-            message.setText(
-                "Dear " + name + ",\n\n" +
-                "Welcome to AssignEase! Your account has been created.\n\n" +
-                "Login Details:\n" +
-                "Email: " + toEmail + "\n" +
-                "Temporary Password: " + tempPassword + "\n\n" +
-                "Please login and change your password immediately.\n" +
-                        "Login at: " + frontendUrl + "/login\n\n" +
-                "Best regards,\nAssignEase Team"
-            );
-            mailSender.send(message);
-            log.info("Welcome email sent to: {}", toEmail);
-        } catch (Exception e) {
-            log.error("Failed to send welcome email to {}: {}", toEmail, e.getMessage());
-        }
-    }
+            message.setSubject("Welcome to AssignEase – Query Received & Account Created ");
 
-    @Async
-    public void sendQueryConfirmation(String toEmail, String name, Long queryId) {
-        try {
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setTo(toEmail);
-            message.setSubject("Query Received – AssignEase (#" + queryId + ")");
+            String loginLink = frontendUrl + "/login";
+
             message.setText(
-                "Dear " + name + ",\n\n" +
-                "We have received your query (ID: #" + queryId + ").\n" +
-                "Our team will get back to you within 24 hours.\n\n" +
-                "An account has been created for you. Please check your inbox for login credentials.\n\n" +
-                "Best regards,\nAssignEase Team"
+                    "Dear " + name + ",\n\n" +
+
+                            "Welcome to AssignEase! 🎉 Your account has been successfully created.\n\n" +
+
+                            "🔐 Login Details:\n" +
+                            "Email: " + toEmail + "\n" +
+                            "Temporary Password: " + tempPassword + "\n\n" +
+
+                            "👉 Login here: " + loginLink + "\n\n" +
+
+                            "📩 Your query has also been received successfully.\n" +
+                            "Query ID: #" + queryId + "\n" +
+                            "Our team will get back to you within 24 hours.\n\n" +
+
+                            "⚠️ Please login and change your password immediately for security.\n\n" +
+
+                            "Best regards,\n" +
+                            "AssignEase Team"
             );
+
             mailSender.send(message);
+            log.info("Welcome + Query email sent to: {}", toEmail);
+
         } catch (Exception e) {
-            log.error("Failed to send query confirmation: {}", e.getMessage());
+            log.error("Failed to send welcome+query email to {}: {}", toEmail, e.getMessage());
         }
     }
 

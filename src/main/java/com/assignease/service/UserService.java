@@ -42,17 +42,14 @@ public class UserService {
             .build();
 
         user = userRepository.save(user);
-        emailService.sendWelcomeEmail(user.getEmail(), user.getFullName(), tempPassword);
 
         return mapToUserResponse(user);
     }
 
-    public User createUserFromQuery(String name, String email) {
+    public User createUserFromQuery(String name, String email,String tempPassword) {
         if (userRepository.existsByEmail(email)) {
             return userRepository.findByEmail(email).orElseThrow();
         }
-
-        String tempPassword = generateTempPassword();
 
         User user = User.builder()
             .fullName(name)
@@ -65,7 +62,6 @@ public class UserService {
             .build();
 
         user = userRepository.save(user);
-        emailService.sendWelcomeEmail(email, name, tempPassword);
         return user;
     }
 
@@ -123,7 +119,7 @@ public class UserService {
         return resp;
     }
 
-    private String generateTempPassword() {
+    public String generateTempPassword() {
         return "Ae@" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
     }
 }

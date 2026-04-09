@@ -23,7 +23,10 @@ public class QueryService {
 
     public AppDTOs.QueryResponse submitQuery(AppDTOs.QueryRequest request) {
         // Create user account if not exists
-        User user = userService.createUserFromQuery(request.getName(), request.getEmail());
+
+        String tempPassword = userService.generateTempPassword();
+
+        User user = userService.createUserFromQuery(request.getName(), request.getEmail(),tempPassword);
 
         Query query = Query.builder()
             .name(request.getName())
@@ -36,7 +39,7 @@ public class QueryService {
             .build();
 
         query = queryRepository.save(query);
-        emailService.sendQueryConfirmation(request.getEmail(), request.getName(), query.getId());
+        emailService.sendWelcomeAndQueryEmail(request.getEmail(), request.getName(),tempPassword, query.getId());
 
         return mapToResponse(query);
     }
