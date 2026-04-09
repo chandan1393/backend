@@ -90,6 +90,7 @@ public class Enrollment {
         UNDER_ADMIN_REVIEW,  // Writer uploaded, admin reviewing
         DELIVERED,           // Admin approved — student downloads
         REVISION_REQUESTED,  // Student requested changes
-        COMPLETED            // All done
+        COMPLETED,           // All done — fully delivered and paid
+        CLOSED               // Admin closed — archived
     }
 }

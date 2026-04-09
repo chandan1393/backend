@@ -306,10 +306,16 @@ public class EnrollmentService {
         submissionRepo.save(sub);
 
         // Update enrollment status to show something is available
-        enrollment.setStatus(Enrollment.EnrollmentStatus.DELIVERED);
+        // Auto-set COMPLETED if all installments paid
+        List<PaymentInstallment> allInsts = installmentRepo.findByEnrollmentOrderByInstallmentNumberAsc(enrollment);
+        long confirmedCount = allInsts.stream().filter(p -> p.getStatus() == PaymentInstallment.InstallmentStatus.CONFIRMED).count();
+        if (!allInsts.isEmpty() && confirmedCount >= allInsts.size()) {
+            enrollment.setStatus(Enrollment.EnrollmentStatus.COMPLETED);
+        } else {
+            enrollment.setStatus(Enrollment.EnrollmentStatus.DELIVERED);
+        }
         enrollmentRepo.save(enrollment);
 
-        // Notify student
         long approvedCount = submissionRepo.findApprovedByEnrollment(enrollment.getId()).size();
         createNotif(enrollment.getStudent(), "New Assignment Available! 🎉",
             "Assignment file from your '" + enrollment.getCourseName() + "' class is now available for download. ("
