@@ -16,7 +16,7 @@ public class CorsConfig {
 
         config.setAllowedOrigins(List.of(
                 "http://localhost:4200",
-                "https://your-vercel-app.vercel.app" // 🔥 replace this
+                "https://edutech-dev-demo.vercel.app/"
         ));
 
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
