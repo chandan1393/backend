@@ -1,14 +1,17 @@
 package com.assignease.service;
 
 import com.assignease.dto.AppDTOs;
+import com.assignease.dto.EmailRequest;
 import com.assignease.entity.Assignment;
 import com.assignease.entity.Notification;
 import com.assignease.entity.User;
+import com.assignease.enums.EmailTemplateName;
 import com.assignease.repository.AssignmentRepository;
 import com.assignease.repository.NotificationRepository;
 import com.assignease.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import com.assignease.config.InputSanitizer;
@@ -19,6 +22,8 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.io.FileOutputStream;
 import java.nio.file.Files;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 import java.nio.file.Path;
@@ -33,12 +38,13 @@ import java.util.stream.Collectors;
 @Slf4j
 public class AssignmentService {
 
+
     private final AssignmentRepository assignmentRepository;
     private final FileStorageService fileStorage;
     private final InputSanitizer sanitizer;
     private final UserRepository userRepository;
     private final NotificationRepository notificationRepository;
-    private final EmailService emailService;
+    private final EmailFacadeService emailFacadeService;
 
     private static final String UPLOAD_DIR = "uploads/assignments/";
 
@@ -125,12 +131,8 @@ public class AssignmentService {
         createNotification(assignment.getStudent(), "Assignment Updated", notifMsg,
             Notification.NotificationType.ASSIGNMENT_UPDATED, id);
 
-        emailService.sendAssignmentStatusUpdate(
-            assignment.getStudent().getEmail(),
-            assignment.getStudent().getFullName(),
-            assignment.getTitle(),
-            assignment.getStatus().name()
-        );
+        emailFacadeService.sendAssignmentUpdate(assignment.getStudent().getEmail(),
+                assignment.getStudent().getFullName(),assignment.getTitle(),assignment.getStatus().name());
 
         return mapToResponse(assignment, true);
     }
@@ -184,11 +186,8 @@ public class AssignmentService {
             "Your assignment '" + assignment.getTitle() + "' is ready. Download it from your dashboard.",
             Notification.NotificationType.ASSIGNMENT_COMPLETED, id);
 
-        emailService.sendAssignmentStatusUpdate(
-            assignment.getStudent().getEmail(),
-            assignment.getStudent().getFullName(),
-            assignment.getTitle(), "DELIVERED");
-
+        emailFacadeService.sendAssignmentUpdate(assignment.getStudent().getEmail(),
+                assignment.getStudent().getFullName(),assignment.getTitle(),"DELIVERED");
         return mapToResponse(assignment, true);
     }
 

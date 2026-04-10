@@ -103,6 +103,18 @@
             <artifactId>stripe-java</artifactId>
             <version>24.3.0</version>
         </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+
+        <!-- RabbitMQ -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-amqp</artifactId>
+        </dependency>
+
+
 
         <!-- SpringDoc OpenAPI 3 — Swagger UI with JWT auth (Boot 3 compatible) -->
         <dependency>

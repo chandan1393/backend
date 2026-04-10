@@ -1,8 +1,10 @@
 package com.assignease.service;
 
 import com.assignease.dto.AppDTOs;
+import com.assignease.dto.EmailRequest;
 import com.assignease.entity.Query;
 import com.assignease.entity.User;
+import com.assignease.enums.EmailTemplateName;
 import com.assignease.repository.QueryRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -11,6 +13,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -19,14 +23,11 @@ public class QueryService {
 
     private final QueryRepository queryRepository;
     private final UserService userService;
-    private final EmailService emailService;
+    private final EmailFacadeService emailFacadeService;
 
     public AppDTOs.QueryResponse submitQuery(AppDTOs.QueryRequest request) {
         // Create user account if not exists
-
-        String tempPassword = userService.generateTempPassword();
-
-        User user = userService.createUserFromQuery(request.getName(), request.getEmail(),tempPassword);
+        User user = userService.createUserFromQuery(request.getName(), request.getEmail());
 
         Query query = Query.builder()
             .name(request.getName())
@@ -39,8 +40,8 @@ public class QueryService {
             .build();
 
         query = queryRepository.save(query);
-        emailService.sendWelcomeAndQueryEmail(request.getEmail(), request.getName(),tempPassword, query.getId());
 
+        emailFacadeService.sendQueryConfirmation(request.getEmail(),request.getName(),query.getId());
         return mapToResponse(query);
     }
 
