@@ -46,6 +46,9 @@ public class AssignmentService {
     private final NotificationRepository notificationRepository;
     private final EmailFacadeService emailFacadeService;
 
+    @Value("${app.email.enabled}")
+    private boolean emailEnabled;
+
     private static final String UPLOAD_DIR = "uploads/assignments/";
 
     // ── Student: create assignment (with optional document) ────────────────────
@@ -131,9 +134,10 @@ public class AssignmentService {
         createNotification(assignment.getStudent(), "Assignment Updated", notifMsg,
             Notification.NotificationType.ASSIGNMENT_UPDATED, id);
 
-        emailFacadeService.sendAssignmentUpdate(assignment.getStudent().getEmail(),
-                assignment.getStudent().getFullName(),assignment.getTitle(),assignment.getStatus().name());
-
+        if (emailEnabled) {
+            emailFacadeService.sendAssignmentUpdate(assignment.getStudent().getEmail(),
+                    assignment.getStudent().getFullName(), assignment.getTitle(), assignment.getStatus().name());
+        }
         return mapToResponse(assignment, true);
     }
 
@@ -186,8 +190,11 @@ public class AssignmentService {
             "Your assignment '" + assignment.getTitle() + "' is ready. Download it from your dashboard.",
             Notification.NotificationType.ASSIGNMENT_COMPLETED, id);
 
-        emailFacadeService.sendAssignmentUpdate(assignment.getStudent().getEmail(),
-                assignment.getStudent().getFullName(),assignment.getTitle(),"DELIVERED");
+        if (emailEnabled) {
+            emailFacadeService.sendAssignmentUpdate(assignment.getStudent().getEmail(),
+                    assignment.getStudent().getFullName(), assignment.getTitle(), "DELIVERED");
+        }
+
         return mapToResponse(assignment, true);
     }
 

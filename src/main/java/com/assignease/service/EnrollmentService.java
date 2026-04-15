@@ -7,6 +7,7 @@ import com.assignease.enums.EmailTemplateName;
 import com.assignease.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -34,6 +35,9 @@ public class EnrollmentService {
     private final WriterInvitationRepository invitationRepo;
     private final WhatsAppService whatsAppService;
     private final EmailFacadeService emailFacadeService;
+
+    @Value("${app.email.enabled}")
+    private boolean emailEnabled;
 
 
 
@@ -269,10 +273,11 @@ public class EnrollmentService {
             "Your completed assignments for '" + e.getCourseName() + "' are ready! Download the ZIP file from your dashboard.",
             "DELIVERED", e.getId());
 
-        emailFacadeService.sendAssignmentUpdate(e.getStudent().getEmail(),
-                e.getStudent().getFullName(),e.getCourseName(),"DELIVERED");
+        if (emailEnabled) {
+            emailFacadeService.sendAssignmentUpdate(e.getStudent().getEmail(),
+                    e.getStudent().getFullName(), e.getCourseName(), "DELIVERED");
 
-
+        }
         return Map.of("message", "Approved! Student can now download.", "enrollment", toAdminMap(e));
     }
 
@@ -320,9 +325,10 @@ public class EnrollmentService {
             "Assignment file from your '" + enrollment.getCourseName() + "' class is now available for download. ("
             + approvedCount + " total approved)", "DELIVERED", enrollment.getId());
 
-        emailFacadeService.sendAssignmentUpdate(enrollment.getStudent().getEmail(), enrollment.getStudent().getFullName(),
-                enrollment.getCourseName(), "DELIVERED");
-
+        if (emailEnabled) {
+            emailFacadeService.sendAssignmentUpdate(enrollment.getStudent().getEmail(), enrollment.getStudent().getFullName(),
+                    enrollment.getCourseName(), "DELIVERED");
+        }
         return Map.of("message", "Submission approved! Student can now download this file.",
             "submissionId", submissionId, "approvedCount", approvedCount);
     }
@@ -366,10 +372,11 @@ public class EnrollmentService {
                 String course = inst.getEnrollment().getCourseName();
                 String amount = inst.getCurrency() + " " + inst.getAmount();
 
-                emailFacadeService.sendInstallmentReminder(student.getEmail(), student.getFullName(),
-                        course, inst.getInstallmentNumber(), amount, inst.getDueDate(),
-                        inst.getStripePaymentLink());
-
+                if (emailEnabled) {
+                    emailFacadeService.sendInstallmentReminder(student.getEmail(), student.getFullName(),
+                            course, inst.getInstallmentNumber(), amount, inst.getDueDate(),
+                            inst.getStripePaymentLink());
+                }
                 // WhatsApp reminder
                 String waMsg = "💳 *Payment Reminder — " + course + "*\n\n"
                     + "Hi " + student.getFullName() + "! Your installment #" + inst.getInstallmentNumber()

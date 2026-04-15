@@ -30,6 +30,9 @@ public class WriterService {
     @Value("${app.frontend.url}")
     private String frontendUrl;
 
+    @Value("${app.email.enabled}")
+    private boolean emailEnabled;
+
     private final WriterRepository writerRepository;
     private final UserRepository userRepository;
     private final AssignmentRepository assignmentRepository;
@@ -58,8 +61,9 @@ public class WriterService {
                 .build();
         writerRepository.save(writer);
 
-
-        emailFacadeService.sendWelcomeEmail(user.getEmail(),user.getFullName(),tempPassword);
+        if (emailEnabled) {
+            emailFacadeService.sendWelcomeEmail(user.getEmail(), user.getFullName(), tempPassword);
+        }
         return Map.of("message", "Writer created", "email", email, "tempPassword", tempPassword);
     }
 

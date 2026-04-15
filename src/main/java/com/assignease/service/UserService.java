@@ -28,6 +28,10 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final EmailFacadeService emailFacadeService;
 
+
+    @Value("${app.email.enabled}")
+    private boolean emailEnabled;
+
     public AppDTOs.UserResponse createUser(AppDTOs.UserCreateRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new RuntimeException("Email already registered");
@@ -48,7 +52,9 @@ public class UserService {
 
         user = userRepository.save(user);
 
-        emailFacadeService.sendWelcomeEmail(user.getEmail(),user.getFullName(),tempPassword);
+        if (emailEnabled) {
+            emailFacadeService.sendWelcomeEmail(user.getEmail(), user.getFullName(), tempPassword);
+        }
         return mapToUserResponse(user);
     }
 
@@ -70,7 +76,9 @@ public class UserService {
                 .build();
 
         user = userRepository.save(user);
-        emailFacadeService.sendWelcomeEmail(user.getEmail(),user.getFullName(),tempPassword);
+        if (emailEnabled) {
+            emailFacadeService.sendWelcomeEmail(user.getEmail(), user.getFullName(), tempPassword);
+        }
         return user;
     }
 

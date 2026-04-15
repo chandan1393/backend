@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import org.springframework.beans.factory.annotation.Value;
 
 @Service
 @RequiredArgsConstructor
@@ -24,6 +25,10 @@ public class QueryService {
     private final QueryRepository queryRepository;
     private final UserService userService;
     private final EmailFacadeService emailFacadeService;
+
+    @Value("${app.email.enabled}")
+    private boolean emailEnabled;
+
 
     public AppDTOs.QueryResponse submitQuery(AppDTOs.QueryRequest request) {
         // Create user account if not exists
@@ -41,7 +46,9 @@ public class QueryService {
 
         query = queryRepository.save(query);
 
-        emailFacadeService.sendQueryConfirmation(request.getEmail(),request.getName(),query.getId());
+        if (emailEnabled) {
+            emailFacadeService.sendQueryConfirmation(request.getEmail(), request.getName(), query.getId());
+        }
         return mapToResponse(query);
     }
 
