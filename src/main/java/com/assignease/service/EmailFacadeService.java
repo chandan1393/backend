@@ -1,96 +1,66 @@
 package com.assignease.service;
 
-
-
-import com.assignease.dto.EmailRequest;
-import com.assignease.enums.EmailTemplateName;
+import com.assignease.entity.OutboxMessage;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-import java.util.Map;
-
+/**
+ * EmailFacadeService — the ONE class all business services should call to send emails.
+ *
+ * Instead of injecting OutboxService directly, callers inject EmailFacadeService.
+ * This keeps the public API clean: you just pass the parameters you have,
+ * and the facade decides how to route them (always via the outbox).
+ *
+ * Benefits:
+ *  - Single import for all email needs
+ *  - Easy to swap underlying delivery strategy without touching callers
+ *  - Clear method names that describe intent, not implementation
+ *
+ * Usage (in any service):
+ *   private final EmailFacadeService email;
+ *
+ *   email.welcomeNewUser(user.getEmail(), user.getFullName(), tempPassword);
+ *   email.queryReceived(user.getEmail(), user.getFullName(), query.getId());
+ */
 @Service
 @RequiredArgsConstructor
 public class EmailFacadeService {
 
-    private final EmailProducer emailProducer;
+    private final OutboxService outbox;
 
-    @Value("${app.frontend.url}")
-    private String frontendUrl;
-
-    // ✅ 1. Welcome Email
-    public void sendWelcomeEmail(String email, String name, String password) {
-
-        Map<String, Object> vars = new HashMap<>();
-        vars.put("name", name);
-        vars.put("email", email);
-        vars.put("password", password);
-        vars.put("frontendUrl", frontendUrl);
-
-        send(email, EmailTemplateName.WELCOME_EMAIL, vars);
+    public void welcomeNewUser(String toEmail, String name, String tempPassword) {
+        outbox.enqueueWelcomeEmail(toEmail, name, tempPassword);
     }
 
-    // ✅ 2. Query Confirmation
-    public void sendQueryConfirmation(String email, String name, Long queryId) {
-
-        Map<String, Object> vars = new HashMap<>();
-        vars.put("name", name);
-        vars.put("queryId", queryId);
-
-        send(email, EmailTemplateName.QUERY_CONFIRMATION, vars);
+    public void queryReceived(String toEmail, String name, Long queryId) {
+        outbox.enqueueQueryConfirmation(toEmail, name, queryId);
     }
 
-    // ✅ 3. Assignment Status Update
-    public void sendAssignmentUpdate(String email, String name, String title, String status) {
-
-        Map<String, Object> vars = new HashMap<>();
-        vars.put("name", name);
-        vars.put("assignmentTitle", title);
-        vars.put("status", status);
-        vars.put("frontendUrl", frontendUrl);
-
-        send(email, EmailTemplateName.ASSIGNMENT_STATUS_UPDATE, vars);
+    public void passwordReset(String toEmail, String resetToken) {
+        outbox.enqueuePasswordReset(toEmail, resetToken);
     }
 
-    // ✅ 4. Password Reset
-    public void sendPasswordReset(String email, String token) {
-
-        Map<String, Object> vars = new HashMap<>();
-        vars.put("token", token);
-        vars.put("frontendUrl", frontendUrl);
-
-        send(email, EmailTemplateName.PASSWORD_RESET, vars);
+    public void classStatusChanged(String toEmail, String name,
+                                   String className, String status) {
+        outbox.enqueueStatusUpdate(toEmail, name, className, status);
     }
 
-    // ✅ 5. Installment Reminder
-    public void sendInstallmentReminder(String email, String name, String course,
-                                        int installmentNum, String amount, LocalDate dueDate, String link) {
-
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMM yyyy");
-
-        Map<String, Object> vars = new HashMap<>();
-        vars.put("name", name);
-        vars.put("courseName", course);
-        vars.put("installmentNum", installmentNum);
-        vars.put("amount", "₹" + amount);
-        vars.put("dueDate", dueDate.format(formatter));
-        vars.put("paymentLink", link != null ? link : "#");
-
-        send(email, EmailTemplateName.INSTALLMENT_REMINDER, vars);
+    public void paymentDueTomorrow(String toEmail, String name, String courseName,
+                                   int installmentNum, String amount,
+                                   String dueDate, String stripeLink) {
+        outbox.enqueueInstallmentReminder(toEmail, name, courseName,
+            installmentNum, amount, dueDate, stripeLink);
     }
 
-    // 🔥 COMMON METHOD (single place)
-    private void send(String to, EmailTemplateName template, Map<String, Object> vars) {
+    public void expertAssigned(String toEmail, String studentName, String courseName) {
+        outbox.enqueueWriterAssigned(toEmail, studentName, courseName);
+    }
 
-        EmailRequest request = new EmailRequest();
-        request.setTo(to);
-        request.setTemplateName(template.name());
-        request.setVariables(vars);
+    public void workReady(String toEmail, String studentName, String courseName) {
+        outbox.enqueueWorkDelivered(toEmail, studentName, courseName);
+    }
 
-        emailProducer.sendEmail(request);
+    public void notify(String toEmail, String subject, String bodyHtml) {
+        outbox.enqueueNotification(toEmail, subject, bodyHtml);
     }
 }

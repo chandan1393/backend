@@ -35,7 +35,7 @@ public class StripeService {
     private final PaymentInstallmentRepository installmentRepo;
     private final EnrollmentRepository enrollmentRepo;
     private final NotificationRepository notifRepo;
-    private final EmailService emailService;
+    private final EmailFacadeService email;
 
     /**
      * Create a Stripe Checkout Session for a specific installment.

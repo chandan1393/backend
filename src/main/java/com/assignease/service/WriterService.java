@@ -1,22 +1,18 @@
 package com.assignease.service;
 
-import com.assignease.dto.EmailRequest;
 import com.assignease.entity.Assignment;
 import com.assignease.entity.Notification;
 import com.assignease.entity.User;
 import com.assignease.entity.Writer;
-import com.assignease.enums.EmailTemplateName;
 import com.assignease.repository.AssignmentRepository;
 import com.assignease.repository.NotificationRepository;
 import com.assignease.repository.UserRepository;
 import com.assignease.repository.WriterRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -26,12 +22,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class WriterService {
-
-    @Value("${app.frontend.url}")
-    private String frontendUrl;
-
-    @Value("${app.email.enabled}")
-    private boolean emailEnabled;
 
     private final WriterRepository writerRepository;
     private final UserRepository userRepository;
@@ -61,9 +51,8 @@ public class WriterService {
                 .build();
         writerRepository.save(writer);
 
-        if (emailEnabled) {
-            emailFacadeService.sendWelcomeEmail(user.getEmail(), user.getFullName(), tempPassword);
-        }
+        emailFacadeService.welcomeNewUser(email, fullName, tempPassword);
+
         return Map.of("message", "Writer created", "email", email, "tempPassword", tempPassword);
     }
 

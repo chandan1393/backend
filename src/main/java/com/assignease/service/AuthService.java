@@ -1,14 +1,11 @@
 package com.assignease.service;
 
 import com.assignease.dto.AuthDTOs;
-import com.assignease.dto.EmailRequest;
 import com.assignease.entity.User;
-import com.assignease.enums.EmailTemplateName;
 import com.assignease.repository.UserRepository;
 import com.assignease.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -18,7 +15,6 @@ import com.assignease.config.InputSanitizer;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -27,18 +23,12 @@ import java.util.UUID;
 @Slf4j
 public class AuthService {
 
-
-
-    @Value("${app.frontend.url}")
-    private String frontendUrl;
-
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final AuthenticationManager authenticationManager;
     private final UserDetailsService userDetailsService;
-    private final EmailService emailService;
-    private final EmailProducer emailProducer;
+    private final EmailFacadeService emailFacadeService;
 
     public AuthDTOs.LoginResponse login(AuthDTOs.LoginRequest request) {
         authenticationManager.authenticate(
@@ -80,17 +70,7 @@ public class AuthService {
         user.setResetTokenExpiry(LocalDateTime.now().plusHours(1));
         userRepository.save(user);
 
-        EmailRequest emailRequest = new EmailRequest();
-        emailRequest.setTo(email);
-        emailRequest.setTemplateName(EmailTemplateName.PASSWORD_RESET.name());
-
-        Map<String, Object> vars = new HashMap<>();
-        vars.put("token", token);
-        vars.put("frontendUrl", frontendUrl);
-
-        emailRequest.setVariables(vars);
-
-        emailProducer.sendEmail(emailRequest);
+        emailFacadeService.passwordReset(email, token);
     }
 
     public void resetPassword(AuthDTOs.ResetPasswordRequest request) {

@@ -1,10 +1,9 @@
 package com.assignease.service;
 
 import com.assignease.dto.AppDTOs;
-import com.assignease.dto.EmailRequest;
+import com.assignease.service.EmailFacadeService;
 import com.assignease.entity.Query;
 import com.assignease.entity.User;
-import com.assignease.enums.EmailTemplateName;
 import com.assignease.repository.QueryRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,9 +12,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
-import org.springframework.beans.factory.annotation.Value;
 
 @Service
 @RequiredArgsConstructor
@@ -23,15 +19,11 @@ import org.springframework.beans.factory.annotation.Value;
 public class QueryService {
 
     private final QueryRepository queryRepository;
-    private final UserService userService;
-    private final EmailFacadeService emailFacadeService;
-
-    @Value("${app.email.enabled}")
-    private boolean emailEnabled;
-
+    private final UserService    userService;
+    private final EmailFacadeService email;
 
     public AppDTOs.QueryResponse submitQuery(AppDTOs.QueryRequest request) {
-        // Create user account if not exists
+        // Create student account if email is new; existing accounts are returned unchanged
         User user = userService.createUserFromQuery(request.getName(), request.getEmail());
 
         Query query = Query.builder()
@@ -46,9 +38,17 @@ public class QueryService {
 
         query = queryRepository.save(query);
 
-        if (emailEnabled) {
-            emailFacadeService.sendQueryConfirmation(request.getEmail(), request.getName(), query.getId());
+        // If this is a new user (tempPassword is set), send the welcome email first
+        // so they receive credentials before the query confirmation
+        if (user.getTempPassword() != null && !user.getTempPassword().isBlank()) {
+            email.welcomeNewUser(
+                request.getEmail(), request.getName(), user.getTempPassword());
         }
+
+        // Always send query confirmation (new and returning users)
+        email.queryReceived(
+            request.getEmail(), request.getName(), query.getId());
+
         return mapToResponse(query);
     }
 
