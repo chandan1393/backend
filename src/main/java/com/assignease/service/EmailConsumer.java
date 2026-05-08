@@ -4,8 +4,6 @@ import com.assignease.config.RabbitMQConfig;
 import com.assignease.entity.OutboxMessage;
 import com.assignease.entity.OutboxMessage.OutboxStatus;
 import com.assignease.repository.OutboxMessageRepository;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.Channel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,22 +15,17 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.Map;
 
 /**
- * EmailConsumer — receives message ID from queue, fetches row from DB, sends email.
+ * EmailConsumer listens to the main RabbitMQ email queue.
  *
- * Receives a Long (the outbox message ID), not the full entity.
- * This avoids the "Failed to convert Message content" error caused by
- * trying to deserialize a Hibernate-proxied JPA entity.
+ * Receives the outbox message ID (Long), looks it up in the DB,
+ * then calls EmailService.dispatchFromOutbox() to send the email.
  *
- * Flow:
- *   1. OutboxRelayJob publishes msg.getId() (Long) to RabbitMQ
- *   2. This consumer receives the Long
- *   3. Fetches fresh OutboxMessage from DB by ID
- *   4. Dispatches to EmailService method
- *   5. On success: marks row SENT, channel.basicAck()
- *   6. On failure: channel.basicNack() → Spring Retry → DLQ
+ * Manual ACK:
+ *   - Only ACKs after the email is sent and DB row is updated to SENT
+ *   - If the app crashes before ACK, RabbitMQ re-delivers to next consumer
+ *   - basicNack(requeue=false) on failure -> Spring Retry -> DLQ
  */
 @Service
 @RequiredArgsConstructor
@@ -41,7 +34,6 @@ public class EmailConsumer {
 
     private final EmailService            emailService;
     private final OutboxMessageRepository repo;
-    private final ObjectMapper            mapper;
 
     @RabbitListener(
         queues           = RabbitMQConfig.EMAIL_QUEUE,
@@ -55,89 +47,47 @@ public class EmailConsumer {
 
         log.info("EmailConsumer: received outboxId={}", outboxId);
 
-        // Fetch fresh from DB — never trust the queued payload to be current
+        // Fetch fresh from DB — never trust queued data to be current
         OutboxMessage msg = repo.findById(outboxId).orElse(null);
 
         if (msg == null) {
-            log.warn("EmailConsumer: outboxId={} not found in DB — already processed or deleted. ACK.", outboxId);
+            log.warn("EmailConsumer: id={} not found in DB, already deleted. ACK.", outboxId);
             channel.basicAck(deliveryTag, false);
             return;
         }
 
-        // Already SENT (duplicate delivery) — ack and skip
+        // Guard against duplicate delivery from RabbitMQ
         if (msg.getStatus() == OutboxStatus.SENT) {
-            log.warn("EmailConsumer: outboxId={} already SENT — duplicate delivery. ACK.", outboxId);
+            log.warn("EmailConsumer: id={} already SENT, skipping duplicate. ACK.", outboxId);
             channel.basicAck(deliveryTag, false);
             return;
         }
 
         try {
-            Map<String, Object> p = parsePayload(msg.getPayloadJson());
-            dispatch(msg.getEmailType(), msg.getToEmail(), p);
+            // Shared dispatch logic — same method used by OutboxRelayJob direct path
+            emailService.dispatchFromOutbox(msg);
 
+            // Mark SENT in DB
             msg.setStatus(OutboxStatus.SENT);
             msg.setProcessedAt(LocalDateTime.now());
             repo.save(msg);
 
-            // ✅ ACK — message successfully processed
+            // ACK — broker removes the message permanently
             channel.basicAck(deliveryTag, false);
             log.info("EmailConsumer: ACK id={} type={} to={}",
                 msg.getId(), msg.getEmailType(), msg.getToEmail());
 
         } catch (Exception e) {
-            log.error("EmailConsumer: FAILED id={} to={}: {}",
+            log.error("EmailConsumer: FAILED id={} to={} error={}",
                 outboxId, msg.getToEmail(), e.getMessage());
 
+            // Save the error for debugging
             msg.setLastError(e.getMessage());
             repo.save(msg);
 
-            // ❌ NACK — Spring Retry will retry, then DLQ after max attempts
+            // NACK — Spring Retry interceptor will retry up to 3 times,
+            // then RejectAndDontRequeueRecoverer sends it to the DLQ
             channel.basicNack(deliveryTag, false, false);
         }
-    }
-
-    private void dispatch(OutboxMessage.EmailType type, String toEmail,
-                          Map<String, Object> p) throws Exception {
-        switch (type) {
-            case WELCOME ->
-                emailService.sendWelcomeEmail(toEmail, str(p,"name"), str(p,"tempPassword"));
-
-            case QUERY_CONFIRMATION ->
-                emailService.sendQueryConfirmation(toEmail, str(p,"name"),
-                    p.get("queryId") instanceof Number n ? n.longValue() : 0L);
-
-            case PASSWORD_RESET ->
-                emailService.sendPasswordResetEmail(toEmail, str(p,"resetToken"));
-
-            case ASSIGNMENT_STATUS_UPDATE ->
-                emailService.sendAssignmentStatusUpdate(toEmail, str(p,"name"),
-                    str(p,"assignmentTitle"), str(p,"status"));
-
-            case INSTALLMENT_REMINDER ->
-                emailService.sendInstallmentReminder(toEmail, str(p,"name"),
-                    str(p,"courseName"),
-                    p.get("installmentNum") instanceof Number n ? n.intValue() : 1,
-                    str(p,"amount"), str(p,"dueDate"), str(p,"stripeLink"));
-
-            case WRITER_ASSIGNED ->
-                emailService.sendWriterAssigned(toEmail, str(p,"studentName"), str(p,"courseName"));
-
-            case WORK_DELIVERED ->
-                emailService.sendWorkDelivered(toEmail, str(p,"studentName"), str(p,"courseName"));
-
-            case NOTIFICATION ->
-                emailService.sendNotification(toEmail, str(p,"subject"), str(p,"bodyHtml"));
-
-            default -> log.warn("EmailConsumer: unknown type {}", type);
-        }
-    }
-
-    private Map<String, Object> parsePayload(String json) throws Exception {
-        return mapper.readValue(json, new TypeReference<>() {});
-    }
-
-    private String str(Map<String, Object> p, String key) {
-        Object v = p.get(key);
-        return v != null ? v.toString() : "";
     }
 }

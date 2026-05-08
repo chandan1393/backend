@@ -28,7 +28,7 @@ public class AuthService {
     private final JwtUtil jwtUtil;
     private final AuthenticationManager authenticationManager;
     private final UserDetailsService userDetailsService;
-    private final EmailFacadeService emailFacadeService;
+    private final EmailFacadeService emailFacade;
 
     public AuthDTOs.LoginResponse login(AuthDTOs.LoginRequest request) {
         authenticationManager.authenticate(
@@ -70,7 +70,7 @@ public class AuthService {
         user.setResetTokenExpiry(LocalDateTime.now().plusHours(1));
         userRepository.save(user);
 
-        emailFacadeService.passwordReset(email, token);
+        emailFacade.passwordReset(user.getEmail(), token);
     }
 
     public void resetPassword(AuthDTOs.ResetPasswordRequest request) {

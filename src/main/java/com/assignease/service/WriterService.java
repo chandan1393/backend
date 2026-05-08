@@ -28,7 +28,7 @@ public class WriterService {
     private final AssignmentRepository assignmentRepository;
     private final NotificationRepository notificationRepository;
     private final PasswordEncoder passwordEncoder;
-    private final EmailFacadeService emailFacadeService;
+    private final EmailFacadeService emailFacade;
 
     public Map<String, Object> createWriter(String fullName, String email, String phone, String bio, String expertise) {
         if (userRepository.existsByEmail(email)) {
@@ -51,7 +51,7 @@ public class WriterService {
                 .build();
         writerRepository.save(writer);
 
-        emailFacadeService.welcomeNewUser(email, fullName, tempPassword);
+        emailFacade.welcomeNewUser(email, fullName, tempPassword);
 
         return Map.of("message", "Writer created", "email", email, "tempPassword", tempPassword);
     }

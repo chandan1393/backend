@@ -33,14 +33,14 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void seedAdmin() {
-        if (!userRepository.existsByEmail("admin@assignease.com")) {
+        if (!userRepository.existsByEmail("admin@edupilothelp.com")) {
             User admin = User.builder()
-                .fullName("Super Admin").email("admin@assignease.com")
+                .fullName("Super Admin").email("admin@edupilothelp.com")
                 .password(passwordEncoder.encode("Admin@123"))
                 .role(User.Role.ROLE_ADMIN).enabled(true).firstLogin(false)
                 .build();
             userRepository.save(admin);
-            log.info("✅ Default admin: admin@assignease.com / Admin@123");
+            log.info("✅ Default admin: admin@edupilothelp.com / Admin@123");
         }
     }
 
