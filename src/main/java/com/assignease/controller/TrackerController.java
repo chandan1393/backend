@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import jakarta.transaction.Transactional;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -24,6 +25,7 @@ import java.util.stream.Collectors;
 @Tag(name = "Tracker & Invitations", description = "Assignment tracker tasks, writer invitations, credential approval")
 @RestController
 @RequiredArgsConstructor
+@Transactional
 public class TrackerController {
 
     @Value("${app.upload.dir}")

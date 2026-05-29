@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import jakarta.transaction.Transactional;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -22,6 +23,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/student")
 @RequiredArgsConstructor
+@Transactional
 public class StudentController {
 
     private final AssignmentService assignmentService;
@@ -59,7 +61,15 @@ public class StudentController {
     public ResponseEntity<?> getNotifications(@AuthenticationPrincipal UserDetails ud) {
         User user = userRepository.findByEmail(ud.getUsername()).orElseThrow();
         List<Notification> notifications = notificationRepository.findByUserOrderByCreatedAtDesc(user);
-        return ResponseEntity.ok(notifications);
+        List<java.util.Map<String,Object>> dtos = notifications.stream().map(n -> {
+            java.util.Map<String,Object> m = new java.util.LinkedHashMap<>();
+            m.put("id", n.getId()); m.put("title", n.getTitle());
+            m.put("message", n.getMessage()); m.put("read", n.isRead());
+            m.put("type", n.getType() != null ? n.getType().name() : "GENERAL");
+            m.put("referenceId", n.getReferenceId()); m.put("createdAt", n.getCreatedAt());
+            return m;
+        }).collect(java.util.stream.Collectors.toList());
+        return ResponseEntity.ok(dtos);
     }
 
     @PostMapping("/notifications/read-all")

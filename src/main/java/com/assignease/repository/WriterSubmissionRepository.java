@@ -10,6 +10,5 @@ public interface WriterSubmissionRepository extends JpaRepository<WriterSubmissi
     List<WriterSubmission> findByEnrollmentIdOrderByUploadedAtDesc(Long enrollmentId);
     List<WriterSubmission> findByWriterIdOrderByUploadedAtDesc(Long writerId);
 
-    @org.springframework.data.jpa.repository.Query("SELECT s FROM WriterSubmission s WHERE s.enrollment.id = :enrollmentId AND s.status = 'APPROVED' ORDER BY s.uploadedAt DESC")
-    List<WriterSubmission> findApprovedByEnrollment(Long enrollmentId);
+    List<WriterSubmission> findByEnrollmentIdAndStatusOrderByUploadedAtDesc(Long enrollmentId, WriterSubmission.SubmissionStatus status);
 }

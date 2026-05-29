@@ -1,4 +1,9 @@
 package com.assignease.repository;
+
 import com.assignease.entity.StudentFeedback;
 import org.springframework.data.jpa.repository.JpaRepository;
-public interface StudentFeedbackRepository extends JpaRepository<StudentFeedback, Long> {}
+import java.util.List;
+
+public interface StudentFeedbackRepository extends JpaRepository<StudentFeedback, Long> {
+    List<StudentFeedback> findByVisibleTrueOrderByCreatedAtDesc();
+}

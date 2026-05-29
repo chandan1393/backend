@@ -25,7 +25,7 @@ public class WhatsAppService {
     @Value("${twilio.whatsapp.from:whatsapp:+14155238886}")
     private String fromNumber;
 
-    @Value("${app.company.name:AssignEase}")
+    @Value("${app.company.name:EduAssist}")
     private String companyName;
 
     /**

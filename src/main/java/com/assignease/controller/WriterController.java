@@ -2,6 +2,7 @@ package com.assignease.controller;
 
 import com.assignease.service.AssignmentService;
 import lombok.RequiredArgsConstructor;
+import jakarta.transaction.Transactional;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -12,6 +13,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/writer")
 @RequiredArgsConstructor
+@Transactional
 public class WriterController {
 
     private final AssignmentService assignmentService;

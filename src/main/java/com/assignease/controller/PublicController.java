@@ -62,7 +62,7 @@ public class PublicController {
         try {
             TextMeLead lead = siteService.saveTextMeLead(phone.trim(), countryCode);
             String companyName = siteService.getConfig("company_name");
-            if (companyName == null || companyName.isEmpty()) companyName = "AssignEase";
+            if (companyName == null || companyName.isEmpty()) companyName = "EduAssist";
             String message = whatsAppService.buildLeadMessage(phone.trim(), companyName);
             whatsAppService.sendWhatsApp(phone.trim(), message);
             return ResponseEntity.ok(Map.of("message", "Thanks! Our team will WhatsApp you shortly.", "leadId", lead.getId()));
@@ -75,7 +75,7 @@ public class PublicController {
     public ResponseEntity<?> getPublicConfig() {
         Map<String, String> c = siteService.getAllConfig();
         return ResponseEntity.ok(Map.of(
-            "company_name",    c.getOrDefault("company_name", "AssignEase"),
+            "company_name",    c.getOrDefault("company_name", "EduAssist"),
             "company_tagline", c.getOrDefault("company_tagline", "Academic Excellence Delivered"),
             "company_email",   c.getOrDefault("company_email", "support@assignease.com"),
             "company_phone",   c.getOrDefault("company_phone", "+91 98765 43210"),

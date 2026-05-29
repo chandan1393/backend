@@ -13,6 +13,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.assignease.config.InputSanitizer;
 import com.assignease.service.FileStorageService;
 
+import jakarta.transaction.Transactional;
 import java.io.*;
 import java.nio.file.*;
 import java.time.LocalDate;
@@ -24,6 +25,7 @@ import java.util.zip.*;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Transactional
 public class EnrollmentService {
 
     private final EnrollmentRepository enrollmentRepo;
@@ -93,7 +95,7 @@ public class EnrollmentService {
 
     // ── Admin: get all enrollments ────────────────────────────────────────────
     public Page<Map<String, Object>> getAllEnrollments(Pageable pageable) {
-        return enrollmentRepo.findAllByOrderByCreatedAtDesc(pageable).map(e -> toAdminMap(e));
+        return enrollmentRepo.findAllWithStudentAndWriter(pageable).map(e -> toAdminMap(e));
     }
 
     // ── Admin: update status + price + reply ──────────────────────────────────
@@ -316,7 +318,7 @@ public class EnrollmentService {
         }
         enrollmentRepo.save(enrollment);
 
-        long approvedCount = submissionRepo.findApprovedByEnrollment(enrollment.getId()).size();
+        long approvedCount = submissionRepo.findByEnrollmentIdAndStatusOrderByUploadedAtDesc(enrollment.getId(), WriterSubmission.SubmissionStatus.APPROVED).size();
         createNotif(enrollment.getStudent(), "New Assignment Available! 🎉",
             "Assignment file from your '" + enrollment.getCourseName() + "' class is now available for download. ("
             + approvedCount + " total approved)", "DELIVERED", enrollment.getId());
@@ -434,13 +436,15 @@ public class EnrollmentService {
         m.put("adminReply", e.getAdminReply()); m.put("studentNotes", e.getStudentNotes());
         m.put("referenceDocPath", e.getReferenceDocPath());
         // Include all individually approved submissions for student download
-        List<Map<String, Object>> approvedSubs = submissionRepo.findApprovedByEnrollment(e.getId()).stream()
+        List<Map<String, Object>> approvedSubs;
+        try { approvedSubs = submissionRepo.findByEnrollmentIdAndStatusOrderByUploadedAtDesc(e.getId(), WriterSubmission.SubmissionStatus.APPROVED).stream()
             .map(s -> { Map<String, Object> sm = new java.util.LinkedHashMap<>();
                 sm.put("id", s.getId()); sm.put("fileName", s.getFileName());
                 sm.put("zipPath", s.getZipPath()); sm.put("description", s.getDescription());
                 sm.put("uploadedAt", s.getUploadedAt()); sm.put("reviewedAt", s.getReviewedAt());
                 return sm; })
             .collect(java.util.stream.Collectors.toList());
+        } catch(Exception _ex) { approvedSubs = java.util.Collections.emptyList(); }
         m.put("approvedSubmissions", approvedSubs);
         m.put("hasApprovedFiles", !approvedSubs.isEmpty());
         // Keep legacy single-file field for backward compat
@@ -448,7 +452,7 @@ public class EnrollmentService {
         m.put("writerFileApproved", !approvedSubs.isEmpty());
         m.put("assignedWriterName", e.getAssignedWriter() != null ? e.getAssignedWriter().getFullName() : null);
         m.put("createdAt", e.getCreatedAt()); m.put("completedAt", e.getCompletedAt());
-        m.put("installments", installmentRepo.findByEnrollmentOrderByInstallmentNumberAsc(e).stream().map(this::toInstallmentMap).collect(Collectors.toList()));
+        try { m.put("installments", installmentRepo.findByEnrollmentOrderByInstallmentNumberAsc(e).stream().map(this::toInstallmentMap).collect(Collectors.toList())); } catch(Exception _ex) { m.put("installments", java.util.Collections.emptyList()); }
         return m;
     }
 
@@ -459,7 +463,8 @@ public class EnrollmentService {
         m.put("adminNotes", e.getAdminNotes());
         m.put("deliveryZipPath", e.getDeliveryZipPath()); // admin always sees
         // All submissions for admin review
-        List<Map<String, Object>> allSubs = submissionRepo.findByEnrollmentIdOrderByUploadedAtDesc(e.getId()).stream()
+        List<Map<String, Object>> allSubs;
+        try { allSubs = submissionRepo.findByEnrollmentIdOrderByUploadedAtDesc(e.getId()).stream()
             .map(s -> { Map<String, Object> sm = new java.util.LinkedHashMap<>();
                 sm.put("id", s.getId()); sm.put("fileName", s.getFileName());
                 sm.put("zipPath", s.getZipPath()); sm.put("description", s.getDescription());
@@ -468,6 +473,7 @@ public class EnrollmentService {
                 sm.put("writerName", s.getWriter() != null ? s.getWriter().getFullName() : "");
                 return sm; })
             .collect(java.util.stream.Collectors.toList());
+        } catch(Exception _ex) { allSubs = java.util.Collections.emptyList(); }
         m.put("writerSubmissions", allSubs);
         m.put("studentName", e.getStudent().getFullName());
         m.put("studentEmail", e.getStudent().getEmail());
