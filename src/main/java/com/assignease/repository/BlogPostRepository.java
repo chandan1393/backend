@@ -12,5 +12,7 @@ public interface BlogPostRepository extends JpaRepository<BlogPost, Long> {
     Page<BlogPost> findByPublishedTrueOrderByCreatedAtDesc(Pageable pageable);
     List<BlogPost> findByPublishedTrueAndFeaturedTrueOrderByCreatedAtDesc();
     Optional<BlogPost> findBySlugAndPublishedTrue(String slug);
+    Optional<BlogPost> findBySlug(String slug);
+    boolean existsBySlug(String slug);
     Page<BlogPost> findByCategoryAndPublishedTrueOrderByCreatedAtDesc(String category, Pageable pageable);
 }
