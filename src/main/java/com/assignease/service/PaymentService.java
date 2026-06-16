@@ -32,8 +32,8 @@ public class PaymentService {
     private final UserRepository userRepository;
     private final NotificationRepository notificationRepository;
 
-    @Value("${razorpay.key.id}") private String razorpayKeyId;
-    @Value("${razorpay.key.secret}") private String razorpayKeySecret;
+    @Value("${razorpay.key.id:}") private String razorpayKeyId;
+    @Value("${razorpay.key.secret:}") private String razorpayKeySecret;
 
     public Map<String, Object> createOrder(Long assignmentId, String studentEmail) throws Exception {
         Assignment assignment = assignmentRepository.findById(assignmentId)

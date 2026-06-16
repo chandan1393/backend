@@ -114,6 +114,12 @@
             <artifactId>spring-boot-starter-amqp</artifactId>
         </dependency>
 
+        <!-- Spring Retry — required by RabbitMQConfig retry interceptor (DLQ backoff) -->
+        <dependency>
+            <groupId>org.springframework.retry</groupId>
+            <artifactId>spring-retry</artifactId>
+        </dependency>
+
         <!-- Jackson Java 8 date/time support (LocalDateTime → ISO-8601 UTC) -->
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
