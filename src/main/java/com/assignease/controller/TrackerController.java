@@ -4,7 +4,6 @@ import com.assignease.entity.*;
 import com.assignease.repository.*;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import jakarta.transaction.Transactional;
@@ -27,9 +26,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Transactional
 public class TrackerController {
-
-    @Value("${app.upload.dir}")
-    private String UPLOAD_BASE;
 
     private final AssignmentTrackerRepository trackerRepo;
     private final EnrollmentRepository enrollmentRepo;
@@ -367,14 +363,6 @@ public class TrackerController {
     }
 
     // ── HELPERS ───────────────────────────────────────────────────────────────
-    private String saveFile(MultipartFile f, Long taskId) throws IOException {
-        Path dir = Paths.get(UPLOAD_BASE + taskId + "/");
-        if (!Files.exists(dir)) Files.createDirectories(dir);
-        String name = UUID.randomUUID().toString().substring(0, 8) + "_" + f.getOriginalFilename();
-        Files.write(dir.resolve(name), f.getBytes());
-        return UPLOAD_BASE + taskId + "/" + name;
-    }
-
     private Map<String, Object> toMap(AssignmentTracker t, boolean includeFiles) {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("id", t.getId());
