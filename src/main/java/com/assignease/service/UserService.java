@@ -58,9 +58,21 @@ public class UserService {
      * This avoids duplicate welcome emails and keeps email responsibility in one place.
      */
     public User createUserFromQuery(String name, String email) {
-        if (userRepository.existsByEmail(email)) {
+        return createUserFromQuery(name, email, null);
+    }
+
+    public User createUserFromQuery(String name, String email, String phone) {
+        // Normalise: email case is not significant, so store and match lower-case
+        email = email == null ? "" : email.trim().toLowerCase();
+        if (userRepository.existsByEmailIgnoreCase(email)) {
             // Existing user — return without touching their password or sending email
-            User existing = userRepository.findByEmail(email).orElseThrow();
+            User existing = userRepository.findByEmailIgnoreCase(email).orElseThrow();
+            // Backfill the phone if we now have one and the account is missing it
+            if (phone != null && !phone.isBlank()
+                    && (existing.getPhone() == null || existing.getPhone().isBlank())) {
+                existing.setPhone(phone.trim());
+                userRepository.save(existing);
+            }
             existing.setTempPassword(null); // signal to caller: user already existed
             return existing;
         }
@@ -70,6 +82,7 @@ public class UserService {
         User user = User.builder()
             .fullName(name)
             .email(email)
+            .phone(phone != null && !phone.isBlank() ? phone.trim() : null)
             .password(passwordEncoder.encode(tempPassword))
             .role(User.Role.ROLE_STUDENT)
             .enabled(true)

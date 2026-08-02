@@ -7,6 +7,8 @@ import com.assignease.entity.User;
 import com.assignease.repository.AssignmentRepository;
 import com.assignease.repository.NotificationRepository;
 import com.assignease.repository.UserRepository;
+import com.assignease.repository.QueryRepository;
+import com.assignease.entity.Query;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -39,6 +41,7 @@ public class AssignmentService {
     private final UserRepository userRepository;
     private final NotificationRepository notificationRepository;
     private final EmailFacadeService email;
+    private final QueryRepository queryRepository;
 
     private static final String UPLOAD_DIR = "uploads/assignments/";
 
@@ -135,7 +138,7 @@ public class AssignmentService {
         return mapToResponse(assignment, true);
     }
 
-    // ── Admin: approve payment (called after Razorpay verify) — now handled in PaymentService directly
+    // ── Admin: approve payment — handled via the Stripe installment flow
 
     // ── Writer: upload solution file ───────────────────────────────────────────
     public AppDTOs.AssignmentResponse writerUploadSolution(Long id, MultipartFile file, String writerEmail) throws IOException {

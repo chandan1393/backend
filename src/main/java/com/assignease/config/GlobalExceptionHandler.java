@@ -1,5 +1,6 @@
 package com.assignease.config;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -16,6 +17,7 @@ import java.util.stream.Collectors;
  * Global exception handler — converts validation errors to clean JSON responses.
  * Prevents stack traces leaking to the frontend.
  */
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -39,10 +41,20 @@ public class GlobalExceptionHandler {
             .body(Map.of("message", "File too large. Maximum allowed size is 50MB."));
     }
 
+    /** Malformed / unparseable request body (bad date format, wrong types, etc.) */
+    @ExceptionHandler(org.springframework.http.converter.HttpMessageNotReadableException.class)
+    public ResponseEntity<Map<String, String>> handleUnreadable(
+            org.springframework.http.converter.HttpMessageNotReadableException ex) {
+        log.warn("Malformed request body: {}", ex.getMostSpecificCause().getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            .body(Map.of("message", "Could not read the submitted data. Please check the field formats and try again."));
+    }
+
     /** Catch-all — never expose stack traces to client */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, String>> handleGeneral(Exception ex) {
         // Log it server-side but return generic message
+        log.error("Unhandled exception: {}", ex.getMessage(), ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
             .body(Map.of("message", "An unexpected error occurred. Please try again."));
     }

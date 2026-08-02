@@ -56,8 +56,6 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/public/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/public/feedback").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/stripe/webhook").permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/bug-report").permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/events/track").permitAll()
                 .requestMatchers("/api/tracker/**").authenticated()
                 .requestMatchers("/api/invitations/**").authenticated()
                 .requestMatchers("/api/enrollments/{id}/credentials").authenticated()

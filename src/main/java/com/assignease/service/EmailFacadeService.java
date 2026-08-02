@@ -63,4 +63,28 @@ public class EmailFacadeService {
     public void notify(String toEmail, String subject, String bodyHtml) {
         outbox.enqueueNotification(toEmail, subject, bodyHtml);
     }
+
+    /** Sent when an admin creates an order on a student's behalf. */
+    public void orderCreatedForStudent(String toEmail, String name, String title,
+                                       Double price, java.time.LocalDateTime deadline) {
+        StringBuilder b = new StringBuilder();
+        b.append("<p>Hi ").append(name == null ? "there" : name).append(",</p>");
+        b.append("<p>We've set up a new order on your account:</p>");
+        b.append("<p><strong>").append(title).append("</strong></p>");
+        b.append("<ul>");
+        if (price != null && price > 0) {
+            b.append("<li>Price: <strong>$").append(String.format("%.2f", price)).append("</strong></li>");
+        }
+        if (deadline != null) {
+            b.append("<li>Deadline: ").append(deadline.toLocalDate()).append("</li>");
+        }
+        b.append("</ul>");
+        if (price != null && price > 0) {
+            b.append("<p>Log in to your dashboard to review the details and complete payment.</p>");
+        } else {
+            b.append("<p>Log in to your dashboard to review the details. We'll confirm pricing shortly.</p>");
+        }
+        b.append("<p>— The EduPilotHelp Team</p>");
+        notify(toEmail, "Your new order: " + title, b.toString());
+    }
 }

@@ -2,6 +2,7 @@ package com.assignease.controller;
 
 import com.assignease.dto.AppDTOs;
 import com.assignease.service.AssignmentService;
+import com.assignease.service.EnrollmentService;
 import com.assignease.service.QueryService;
 import com.assignease.service.UserService;
 import com.assignease.service.WriterService;
@@ -29,6 +30,7 @@ public class AdminController {
     private final QueryService queryService;
     private final UserService userService;
     private final WriterService writerService;
+    private final EnrollmentService enrollmentService;
 
     @GetMapping("/stats")
     public ResponseEntity<?> getStats() { return ResponseEntity.ok(assignmentService.getAdminStats()); }
@@ -82,6 +84,13 @@ public class AdminController {
     @PostMapping("/assignments/{id}/assign-writer") public ResponseEntity<?> assignWriter(
             @PathVariable Long id, @RequestBody Map<String, Long> body) {
         try { writerService.assignWriterToAssignment(id, body.get("writerUserId")); return ResponseEntity.ok(Map.of("message", "Writer assigned")); }
+        catch (Exception e) { return ResponseEntity.badRequest().body(Map.of("message", e.getMessage())); }
+    }
+
+    // ── Admin: create an enrollment (order) for a student, e.g. off the back of a query
+    @PostMapping("/orders") public ResponseEntity<?> createOrderForStudent(
+            @RequestBody Map<String, String> body) {
+        try { return ResponseEntity.ok(enrollmentService.createEnrollmentForStudent(body)); }
         catch (Exception e) { return ResponseEntity.badRequest().body(Map.of("message", e.getMessage())); }
     }
 

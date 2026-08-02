@@ -24,7 +24,7 @@ public class QueryService {
 
     public AppDTOs.QueryResponse submitQuery(AppDTOs.QueryRequest request) {
         // Create student account if email is new; existing accounts are returned unchanged
-        User user = userService.createUserFromQuery(request.getName(), request.getEmail());
+        User user = userService.createUserFromQuery(request.getName(), request.getEmail(), request.getPhone());
 
         Query query = Query.builder()
             .name(request.getName())
@@ -80,6 +80,7 @@ public class QueryService {
         r.setId(q.getId());
         r.setName(q.getName());
         r.setEmail(q.getEmail());
+        r.setPhone(q.getPhone());
         r.setSubject(q.getSubject());
         r.setMessage(q.getMessage());
         r.setStatus(q.getStatus().name());

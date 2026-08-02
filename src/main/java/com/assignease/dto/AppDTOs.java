@@ -42,7 +42,8 @@ public class AppDTOs {
         @Size(max = 150)
         private String email;
 
-        @Pattern(regexp = "^[\\+\\d\\s\\-\\.\\(\\)]{0,25}$", message = "Invalid phone format")
+        @NotBlank(message = "Phone number is required")
+        @Pattern(regexp = "^[\\+\\d\\s\\-\\.\\(\\)]{7,25}$", message = "Invalid phone format")
         private String phone;
 
         @NotBlank(message = "Subject is required")
@@ -59,6 +60,7 @@ public class AppDTOs {
         private Long id;
         private String name;
         private String email;
+        private String phone;
         private String subject;
         private String message;
         private String status;
@@ -215,7 +217,8 @@ public class AppDTOs {
         @Size(max = 150)
         private String email;
 
-        @Pattern(regexp = "^[\\+\\d\\s\\-\\.\\(\\)]{0,25}$", message = "Invalid phone format")
+        @NotBlank(message = "Phone number is required")
+        @Pattern(regexp = "^[\\+\\d\\s\\-\\.\\(\\)]{7,25}$", message = "Invalid phone format")
         private String phone;
 
         @NotBlank(message = "Message is required")

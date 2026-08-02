@@ -68,6 +68,77 @@ public class EnrollmentService {
         return Map.of("id", e.getId(), "message", "Enrollment submitted successfully!");
     }
 
+    /**
+     * Admin creates an enrollment on behalf of a student — typically off the back of
+     * a query. Same downstream flow as a student self-enrolment (installments, writer
+     * assignment, tracker, delivery), the only difference is who raised it.
+     * If the admin supplies a price the enrollment starts at UNDER_REVIEW so they can
+     * add installments straight away; otherwise it sits at SUBMITTED like any other.
+     */
+    public Map<String, Object> createEnrollmentForStudent(Map<String, String> data) {
+        String rawEmail = data.get("studentEmail");
+        if (rawEmail == null || rawEmail.isBlank()) {
+            throw new IllegalArgumentException("Student email is required.");
+        }
+        User student = userRepo.findByEmailIgnoreCase(rawEmail.trim())
+            .orElseThrow(() -> new IllegalArgumentException(
+                "No student account found for " + rawEmail
+                + ". The student must have an account before an enrollment can be created."));
+
+        if (student.getRole() != User.Role.ROLE_STUDENT) {
+            throw new IllegalArgumentException("Enrollments can only be created for student accounts.");
+        }
+
+        Double price = null;
+        String rawPrice = data.get("totalPrice");
+        if (rawPrice != null && !rawPrice.isBlank()) {
+            try { price = Double.parseDouble(rawPrice); }
+            catch (NumberFormatException ex) { throw new IllegalArgumentException("Price must be a number."); }
+        }
+
+        Enrollment e = Enrollment.builder()
+            .courseName(sanitizer.sanitize(data.get("courseName"), 200))
+            .institutionName(sanitizer.sanitize(data.get("institutionName"), 200))
+            .subject(sanitizer.sanitize(data.get("subject"), 100))
+            .courseDescription(sanitizer.sanitize(data.get("courseDescription"), 2000))
+            .classStartDate(parseDate(data.get("classStartDate")))
+            .classEndDate(parseDate(data.get("classEndDate")))
+            .portalUrl(sanitizer.sanitize(data.get("portalUrl"), 500))
+            .portalUsername(sanitizer.sanitize(data.get("portalUsername"), 200))
+            .portalPassword(data.get("portalPassword"))
+            .studentNotes(sanitizer.sanitize(data.get("studentNotes"), 2000))
+            .adminNotes(sanitizer.sanitize(data.get("adminNotes"), 2000))
+            .totalPrice(price)
+            .status(price != null
+                ? Enrollment.EnrollmentStatus.UNDER_REVIEW
+                : Enrollment.EnrollmentStatus.SUBMITTED)
+            .student(student)
+            .build();
+
+        e = enrollmentRepo.save(e);
+
+        try {
+            email.notify(student.getEmail(),
+                "New enrollment created: " + e.getCourseName(),
+                "<p>Hi " + student.getFullName() + ",</p>"
+                + "<p>We've set up a new enrollment on your account for <strong>"
+                + e.getCourseName() + "</strong>.</p>"
+                + (price != null
+                    ? "<p>Total price: <strong>$" + String.format("%.2f", price)
+                      + "</strong>. Log in to your dashboard to review the payment plan.</p>"
+                    : "<p>Log in to your dashboard to review the details. We'll confirm pricing shortly.</p>")
+                + "<p>— The EduPilotHelp Team</p>");
+        } catch (Exception ex) {
+            log.warn("Enrollment {} created but notification email failed: {}", e.getId(), ex.getMessage());
+        }
+
+        return Map.of("id", e.getId(), "message", "Enrollment created for " + student.getEmail());
+    }
+
+    private LocalDate parseDate(String v) {
+        return (v == null || v.isBlank()) ? null : LocalDate.parse(v);
+    }
+
     // ── Student: get their enrollments ───────────────────────────────────────
     public List<Map<String, Object>> getStudentEnrollments(String email) {
         User student = userRepo.findByEmail(email).orElseThrow();

@@ -50,7 +50,7 @@ public class Assignment {
 
     private String adminReply; // Admin reply visible to student in their dashboard
 
-    private Boolean paymentDone = false; // True after Razorpay success
+    private Boolean paymentDone = false; // True once payment is confirmed
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "student_id", nullable = false)

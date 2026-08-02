@@ -96,7 +96,7 @@ public class StudentController {
     }
 
     /**
-     * Download payment receipt for a specific INSTALLMENT (not old Razorpay payment)
+     * Download payment receipt for a specific INSTALLMENT
      */
     @GetMapping("/payment-slip/{installmentId}")
     public ResponseEntity<byte[]> downloadPaymentSlip(
